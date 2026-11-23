@@ -367,7 +367,7 @@ table.t tfoot td{font-weight:700;border-top:2px solid var(--ink);border-bottom:0
       <div class="cfgbody">
       <div class="grid3" style="margin-bottom:14px">
         <div><label class="f">Superficie del recinto</label><input id="supF" type="text" disabled></div>
-        <div><label class="f">¿Se actúa sobre el 100 % del recinto?</label><div class="seg" data-k="total" id="segTot"><button data-v="1">Sí, el 100 %</button><button data-v="0">No, solo una parte</button></div></div>
+        <div><label class="f">¿Se actúa sobre el 100 % del recinto?</label><div class="seg" data-k="total" id="segTot"><button data-v="1">Sí, el 100 %</button><button data-v="0">No, solo una parte</button></div><div class="price-hint hidden" id="totMulti" style="margin-top:10px;font-size:14px;color:var(--ink)">Sí, el 100 % de cada recinto</div></div>
         <div><label class="f">Marco de plantación (m)</label>
           <div style="display:flex;gap:8px;align-items:center"><input id="mx" type="number" step="0.5" min="1"> × <input id="my" type="number" step="0.5" min="1"></div></div>
       </div>
@@ -658,7 +658,7 @@ function showCfg(scroll=true){
   $('#selName').textContent = multi ? `${fs.length} fincas (mismas actuaciones para todas)` : `finca ${fs[0][0]} · ${fs[0][3]}`;
   $('#supF').value = multi ? `${num(tot,4)} ha en ${fs.length} fincas` : `${num(tot,4)} ha (${num(fs[0][4])} m²)`;
   if(multi) c.total='1';
-  $('#segTot').classList.toggle('hidden',multi);
+  $('#segTot').classList.toggle('hidden',multi); $('#totMulti').classList.toggle('hidden',!multi);
   $('#supA').value = c.total==='0' && c.sup ? c.sup : '';
   $('#croq').value=''; croqInfo();
   $('#supNote').textContent = multi ? 'Con varias fincas se actúa sobre el 100 % de cada recinto. Si en alguna solo se actúa sobre una parte, añádala sola.' : '';
@@ -920,5 +920,147 @@ $('#nueva').onclick=()=>{ window.location.reload(); };
 
 step(0);
 </script>
+<!-- ============ ASISTENTE DE PREGUNTAS FRECUENTES ============ -->
+<style>
+.bot-fab{position:fixed;right:18px;bottom:18px;z-index:50;display:flex;align-items:flex-end;gap:10px;border:0;background:none;padding:0;cursor:pointer;font:inherit}
+.bot-bubble{position:relative;background:#fff;color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:9px 13px;font-size:13.5px;font-weight:600;box-shadow:0 6px 20px rgba(20,40,30,.14);margin-bottom:46px;white-space:nowrap;transition:opacity .2s}
+.bot-bubble::after{content:"";position:absolute;right:-7px;bottom:12px;width:12px;height:12px;background:#fff;border-right:1px solid var(--line);border-bottom:1px solid var(--line);transform:rotate(-45deg)}
+.bot-fab.open .bot-bubble{opacity:0;pointer-events:none}
+.bot-av{width:74px;height:74px;border-radius:50%;background:#fff;box-shadow:0 6px 22px rgba(20,40,30,.22);display:grid;place-items:center;border:1px solid var(--line);flex:none}
+.bot-av svg{width:60px;height:60px;overflow:visible}
+.bot-av .eye{transform-box:fill-box;transform-origin:center;animation:blink 4.2s infinite}
+.bot-av .eye.r{animation-delay:.04s}
+@keyframes blink{0%,92%,100%{transform:scaleY(1)}95%{transform:scaleY(.08)}}
+.bot-fab:hover .bot-av{transform:translateY(-2px)}
+.bot-av{transition:transform .15s}
+@media (prefers-reduced-motion:reduce){.bot-av .eye{animation:none}}
+
+.bot-panel{position:fixed;right:18px;bottom:104px;z-index:51;width:min(380px,calc(100vw - 24px));height:min(560px,calc(100vh - 130px));background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:0 18px 50px rgba(20,40,30,.25);display:flex;flex-direction:column;overflow:hidden}
+.bot-hd{display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:3px solid var(--green);background:#fff}
+.bot-hd .mini{width:38px;height:38px;flex:none}
+.bot-hd .mini svg{width:38px;height:38px;overflow:visible}
+.bot-hd b{display:block;font-size:14px}
+.bot-hd span{font-size:12.5px;color:var(--muted)}
+.bot-hd button{margin-left:auto;border:1px solid var(--line);background:#fff;border-radius:3px;width:30px;height:30px;cursor:pointer;font-size:14px;color:var(--muted)}
+.bot-log{flex:1;overflow:auto;padding:14px 12px;background:var(--bg);display:flex;flex-direction:column;gap:10px}
+.bm{max-width:88%;padding:9px 12px;border-radius:10px;font-size:13.5px;line-height:1.45}
+.bm.b{background:#fff;border:1px solid var(--line);align-self:flex-start;border-top-left-radius:2px}
+.bm.u{background:var(--green);color:#fff;align-self:flex-end;border-top-right-radius:2px}
+.bm ul{margin:4px 0 0;padding-left:18px}
+.bot-sug{display:flex;flex-wrap:wrap;gap:6px;align-self:flex-start}
+.bot-sug button{border:1px solid #c9dbd0;background:#fff;color:var(--green);border-radius:14px;padding:5px 10px;font-size:12.5px;cursor:pointer;text-align:left}
+.bot-sug button:hover{background:var(--green-soft)}
+.bot-in{display:flex;gap:6px;padding:10px;border-top:1px solid var(--line);background:#fff}
+.bot-in input{flex:1;height:38px}
+.bot-in button{height:38px}
+@media (max-width:600px){.bot-panel{right:12px;bottom:96px;height:calc(100vh - 120px)}.bot-av{width:62px;height:62px}.bot-av svg{width:50px;height:50px}.bot-bubble{margin-bottom:38px;font-size:12.5px}.bot-fab{right:12px;bottom:12px}}
+@media print{.bot-fab,.bot-panel{display:none!important}}
+</style>
+
+<button class="bot-fab" id="botFab" type="button" aria-label="Abrir el asistente de dudas">
+  <span class="bot-bubble" id="botBubble">¿Dudas? Pregúnteme</span>
+  <span class="bot-av" data-face></span>
+</button>
+
+<div class="bot-panel hidden" id="botPanel" role="dialog" aria-label="Asistente de dudas">
+  <div class="bot-hd">
+    <span class="mini bot-av" style="box-shadow:none;border:0;width:38px;height:38px" data-face></span>
+    <div><b>Asistente San Alfonso</b><span>Respuestas a las dudas más frecuentes</span></div>
+    <button type="button" id="botClose" aria-label="Cerrar">✕</button>
+  </div>
+  <div class="bot-log" id="botLog" aria-live="polite"></div>
+  <form class="bot-in" id="botForm">
+    <input id="botQ" type="text" placeholder="Escriba su pregunta…" autocomplete="off">
+    <button class="btn pri sm" type="submit">Enviar</button>
+  </form>
+</div>
+
+<script>
+{
+const $b = s => document.querySelector(s);
+const FACE=(id)=>`<svg viewBox="0 0 100 100" aria-hidden="true">
+ <defs><linearGradient id="r${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ec6a0c"/><stop offset="1" stop-color="#f7a600"/></linearGradient>
+ <linearGradient id="l${id}" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3aa935"/><stop offset="1" stop-color="#c8d400"/></linearGradient></defs>
+ <path d="M31 24 A32 32 0 1 0 63 19" fill="none" stroke="url(#r${id})" stroke-width="13" stroke-linecap="round"/>
+ <path d="M47 9 C63 2 81 9 87 26 C75 17 61 15 47 9 Z" fill="url(#l${id})"/>
+ <g class="eye"><ellipse cx="40" cy="50" rx="8" ry="10" fill="#fff" stroke="#1f2421" stroke-width="2"/><circle cx="41.5" cy="52.5" r="4.6" fill="#1f2421"/><circle cx="43.2" cy="50.3" r="1.5" fill="#fff"/></g>
+ <g class="eye r"><ellipse cx="60" cy="50" rx="8" ry="10" fill="#fff" stroke="#1f2421" stroke-width="2"/><circle cx="61.5" cy="52.5" r="4.6" fill="#1f2421"/><circle cx="63.2" cy="50.3" r="1.5" fill="#fff"/></g>
+ <path d="M42 68 Q50 75 58 68" fill="none" stroke="#1f2421" stroke-width="2.6" stroke-linecap="round"/>
+</svg>`;
+document.querySelectorAll('[data-face]').forEach((el,i)=>el.innerHTML=FACE('f'+i));
+
+const nrm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
+const FAQ = [
+ {q:'¿Qué necesito para hacer la solicitud?', k:['necesito','necesario','documentacion','documentos','empezar','como hago','pasos','requisitos'],
+  a:'Solo necesita su <b>DNI/NIF</b>. Con él se cargan sus datos de socio y sus fincas registradas. Si va a transformar solo una parte de un recinto, tenga a mano un <b>croquis</b> (foto o PDF) marcando esa zona.'},
+ {q:'¿Qué actuaciones puedo solicitar?', k:['actuaciones','que puedo pedir','subvencionan','que incluye','inversiones','tipos'],
+  a:'Tres actuaciones, que puede combinar en cada finca:<ul><li><b>Acondicionamiento</b> (1.1.4): con arranque del arbolado o solo preparación del terreno.</li><li><b>Riego</b> (1.1.1): cambio de riego completo o cambio de gomas.</li><li><b>Material vegetal</b> (1.2.3): plantones o sobreinjerto de la nueva variedad.</li></ul>'},
+ {q:'¿Cuánto me subvencionan?', k:['cuanto','ayuda','subvencion','porcentaje','50','pagar','aportacion','coste'],
+  a:'La ayuda aproximada es el <b>50 % de la inversión</b>; el otro 50 % es su aportación. Los importes que ve son <b>orientativos</b>, sin IVA, y quedan sujetos a la resolución de la ayuda y a la ejecución real.'},
+ {q:'¿Cómo funciona la financiación?', k:['financiacion','financiar','plazos','intereses','cuotas','aplazar','3 anos','tres anos'],
+  a:'Si su aportación supera <b>2.500 €</b>, puede pagarla en <b>3 años</b>: el <b>primer año sin intereses</b> y el segundo y el tercero al <b>6 %</b> sobre el capital pendiente. En el presupuesto verá el plan de pagos año a año al marcar la casilla.'},
+ {q:'¿Qué diferencia hay entre riego completo y cambio de gomas?', k:['gomas','riego completo','goteo','tuberias','riego'],
+  a:'El <b>cambio de riego completo</b> renueva toda la instalación de goteo de la parcela. El <b>cambio de gomas</b> solo sustituye las tuberías portagoteros y cuesta aproximadamente <b>un tercio</b> del riego completo.'},
+ {q:'¿Con arranque o sin arranque?', k:['arranque','arrancar','sin arranque','preparacion','acondicionamiento','terreno'],
+  a:'<b>Con arranque</b>: se arrancan los árboles actuales y se prepara el terreno para la nueva plantación. <b>Sin arranque</b>: la parcela ya está libre y solo hay que preparar el terreno.'},
+ {q:'¿Qué no es subvencionable?', k:['no subvencionable','no entra','excluido','no se paga','mano de obra'],
+  a:'No son subvencionables:<ul><li>La retirada de gomas antiguas y de las raíces extraídas con los ganchos.</li><li>La mano de obra de la plantación (hoyos, plantación y riego).</li><li>El diseño de la nueva plantación.</li></ul>'},
+ {q:'¿Qué es el croquis y cuándo lo necesito?', k:['croquis','plano','dibujo','parte','parcial','100','porcentaje recinto','mapa','sigpac visor'],
+  a:'Solo si <b>no transforma el 100 % del recinto</b>. Puede hacer una captura del visor SIGPAC o una foto de un plano y marcar a mano la zona que transforma. Se admiten fotos (JPG, PNG) o PDF; la app reduce el tamaño de las fotos automáticamente.'},
+ {q:'¿Puedo marcar varias fincas a la vez?', k:['varias','todas','muchas','varias fincas','seleccionar','marcar'],
+  a:'Sí. Marque las fincas que quiera (o use los filtros y «Seleccionar todas las de la lista») y elija las actuaciones una vez: se aplican igual a todas. En ese caso se entiende que actúa sobre el 100 % de cada recinto. Repita el proceso para otro grupo de fincas con actuaciones distintas.'},
+ {q:'¿Qué es el marco de plantación?', k:['marco','distancia','separacion','arboles por','densidad','6x4','6 x 4'],
+  a:'Es la distancia entre filas por la distancia entre árboles de la misma fila, en metros. Por defecto se usa <b>6 × 4 m</b>; puede cambiarlo. Con el marco y la superficie se calcula el número de plantones.'},
+ {q:'¿Qué patrón elijo?', k:['patron','portainjerto','carrizo','citrumelo','fa','forner','cual elijo'],
+  a:'Depende sobre todo del suelo (caliza, salinidad) y del agua de riego. Como orientación: Carrizo y Citrumelo son los más habituales; FA (Forner-Alcaide) suele elegirse por su tolerancia a la salinidad y a la caliza. Si tiene dudas, consulte con el técnico de la cooperativa antes de enviar la solicitud.'},
+ {q:'¿Qué es el sobreinjerto (planchas)?', k:['sobreinjerto','planchas','injertar','injerto','cambiar variedad sin arrancar'],
+  a:'Es cambiar de variedad <b>sin arrancar</b> el árbol: se injerta la nueva variedad sobre los árboles existentes. Solo está disponible para Leanri y Tango.'},
+ {q:'¿Por qué algunas variedades llevan licencia?', k:['licencia','royalty','protegida','leanri','tango','derechos'],
+  a:'Leanri y Tango son variedades protegidas: además del plantón se paga la licencia del obtentor. La app la suma automáticamente al presupuesto (por árbol en Leanri y por m² en Tango).'},
+ {q:'Mis datos de contacto no son correctos', k:['telefono','correo','email','domicilio','direccion','datos mal','incorrecto','cambiar datos','editar'],
+  a:'Pulse <b>Editar</b> junto al dato, corríjalo y continúe. La oficina recibirá el aviso para actualizarlo en su ficha.'},
+ {q:'No aparece una de mis fincas', k:['no aparece','falta','finca','recinto','no sale','superficie 0','no esta'],
+  a:'La lista muestra las fincas que constan a su nombre en el registro de la cooperativa. Si falta alguna o la superficie no es correcta, contacte con la oficina de su cooperativa para revisarlo.'},
+ {q:'¿Recibiré una copia de la solicitud?', k:['copia','pdf','justificante','recibir','descargar','imprimir','comprobante'],
+  a:'Sí. Al finalizar puede <b>descargar el PDF</b> y, si ha indicado su correo electrónico, recibirá una copia en él.'},
+ {q:'¿Qué pasa si después desisto?', k:['desisto','desistir','renuncio','cancelar','anular','echarme atras','ya no quiero'],
+  a:'Se le facturarán los pagos a cuenta que la cooperativa haya tenido que hacer (trabajos, materiales, derechos de variedades, material vegetal…) y un <b>2 %</b> del valor de la acción en concepto de gastos de gestión.'},
+ {q:'¿Puedo modificar la solicitud después?', k:['modificar','cambiar solicitud','corregir','error','me he equivocado','rectificar'],
+  a:'Antes de finalizar puede volver atrás en cualquier paso. Si ya la ha enviado, haga una nueva eligiendo «Modificación de la solicitud inicial» como tipo de solicitud, o contacte con la oficina.'},
+ {q:'¿Cómo se tratan mis datos?', k:['privacidad','datos personales','proteccion de datos','rgpd','seguridad'],
+  a:'Sus datos los trata la cooperativa únicamente para gestionar esta solicitud de ayudas.'}
+];
+const START = ['¿Qué necesito para hacer la solicitud?','¿Cuánto me subvencionan?','¿Cómo funciona la financiación?','¿Qué diferencia hay entre riego completo y cambio de gomas?','¿Qué es el croquis y cuándo lo necesito?','¿Puedo marcar varias fincas a la vez?'];
+const log=$b('#botLog');
+function add(html,who){ const d=document.createElement('div'); d.className='bm '+who; d.innerHTML=html; log.appendChild(d); log.scrollTop=log.scrollHeight; }
+function sugs(list){ const w=document.createElement('div'); w.className='bot-sug'; list.forEach(q=>{ const b=document.createElement('button'); b.type='button'; b.textContent=q; b.onclick=()=>ask(q); w.appendChild(b); }); log.appendChild(w); log.scrollTop=log.scrollHeight; }
+function best(text){
+  const t=nrm(text); const exact=FAQ.find(f=>nrm(f.q)===t); if(exact) return [exact];
+  const words=t.split(/[^a-z0-9ñ]+/).filter(w=>w.length>2);
+  const sc=FAQ.map(f=>{ let s=0; f.k.forEach(k=>{ const kk=nrm(k); if(t.includes(kk)) s+=kk.includes(' ')?3:2; });
+    const qq=nrm(f.q); words.forEach(w=>{ if(qq.includes(w)) s+=1; }); return {f,s}; }).filter(x=>x.s>=2).sort((a,b)=>b.s-a.s);
+  return sc.map(x=>x.f);
+}
+function ask(text){
+  add(text.replace(/[<>&]/g,''),'u');
+  const r=best(text);
+  setTimeout(()=>{
+    if(r.length){ add(r[0].a,'b'); const more=r.slice(1,3).map(f=>f.q); if(more.length){ add('Quizá también le interese:','b'); sugs(more); } }
+    else { add('No tengo una respuesta para esa pregunta. Pruebe con alguna de estas o contacte con la oficina de su cooperativa:','b'); sugs(START.slice(0,4)); }
+  },250);
+}
+let started=false;
+function open(){ $b('#botPanel').classList.remove('hidden'); $b('#botFab').classList.add('open');
+  if(!started){ started=true; add('Hola. Soy el asistente de San Alfonso. Elija una pregunta o escríbala con sus palabras.','b'); sugs(START); }
+  setTimeout(()=>$b('#botQ').focus(),50); }
+function close(){ $b('#botPanel').classList.add('hidden'); $b('#botFab').classList.remove('open'); }
+$b('#botFab').onclick=()=> $b('#botPanel').classList.contains('hidden')?open():close();
+$b('#botClose').onclick=close;
+$b('#botForm').addEventListener('submit',e=>{ e.preventDefault(); const v=$b('#botQ').value.trim(); if(!v) return; $b('#botQ').value=''; ask(v); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') close(); });
+}
+</script>
+<!-- ============ FIN ASISTENTE ============ -->
+
 </body>
 </html>
