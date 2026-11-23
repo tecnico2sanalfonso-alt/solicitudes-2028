@@ -993,6 +993,8 @@ const nrm = s => String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g
 const FAQ = [
  {q:'¿Qué necesito para hacer la solicitud?', k:['necesito','necesario','documentacion','documentos','empezar','como hago','pasos','requisitos'],
   a:'Solo necesita su <b>DNI/NIF</b>. Con él se cargan sus datos de socio y sus fincas registradas. Si va a transformar solo una parte de un recinto, tenga a mano un <b>croquis</b> (foto o PDF) marcando esa zona.'},
+ {q:'¿Hasta cuándo puedo presentar la solicitud?', k:['plazo','hasta cuando','fecha','cuando','limite','cierra','termina','ultimo dia','mayo'],
+  a:'El plazo está abierto desde la recepción de la circular hasta el <b>31 de mayo</b>.'},
  {q:'¿Qué actuaciones puedo solicitar?', k:['actuaciones','que puedo pedir','subvencionan','que incluye','inversiones','tipos'],
   a:'Tres actuaciones, que puede combinar en cada finca:<ul><li><b>Acondicionamiento</b> (1.1.4): con arranque del arbolado o solo preparación del terreno.</li><li><b>Riego</b> (1.1.1): cambio de riego completo o cambio de gomas.</li><li><b>Material vegetal</b> (1.2.3): plantones o sobreinjerto de la nueva variedad.</li></ul>'},
  {q:'¿Cuánto me subvencionan?', k:['cuanto','ayuda','subvencion','porcentaje','50','pagar','aportacion','coste'],
@@ -1012,7 +1014,7 @@ const FAQ = [
  {q:'¿Qué es el marco de plantación?', k:['marco','distancia','separacion','arboles por','densidad','6x4','6 x 4'],
   a:'Es la distancia entre filas por la distancia entre árboles de la misma fila, en metros. Por defecto se usa <b>6 × 4 m</b>; puede cambiarlo. Con el marco y la superficie se calcula el número de plantones.'},
  {q:'¿Qué patrón elijo?', k:['patron','portainjerto','carrizo','citrumelo','fa','forner','cual elijo'],
-  a:'Depende sobre todo del suelo (caliza, salinidad) y del agua de riego. Como orientación: Carrizo y Citrumelo son los más habituales; FA (Forner-Alcaide) suele elegirse por su tolerancia a la salinidad y a la caliza. Si tiene dudas, consulte con el técnico de la cooperativa antes de enviar la solicitud.'},
+  a:'La elección del patrón depende de cada parcela (suelo, agua de riego, variedad). Para decidirlo, <b>póngase en contacto con los técnicos de la cooperativa</b> antes de enviar la solicitud.'},
  {q:'¿Qué es el sobreinjerto (planchas)?', k:['sobreinjerto','planchas','injertar','injerto','cambiar variedad sin arrancar'],
   a:'Es cambiar de variedad <b>sin arrancar</b> el árbol: se injerta la nueva variedad sobre los árboles existentes. Solo está disponible para Leanri y Tango.'},
  {q:'¿Por qué algunas variedades llevan licencia?', k:['licencia','royalty','protegida','leanri','tango','derechos'],
@@ -1030,7 +1032,7 @@ const FAQ = [
  {q:'¿Cómo se tratan mis datos?', k:['privacidad','datos personales','proteccion de datos','rgpd','seguridad'],
   a:'Sus datos los trata la cooperativa únicamente para gestionar esta solicitud de ayudas.'}
 ];
-const START = ['¿Qué necesito para hacer la solicitud?','¿Cuánto me subvencionan?','¿Cómo funciona la financiación?','¿Qué diferencia hay entre riego completo y cambio de gomas?','¿Qué es el croquis y cuándo lo necesito?','¿Puedo marcar varias fincas a la vez?'];
+const START = ['¿Qué necesito para hacer la solicitud?','¿Hasta cuándo puedo presentar la solicitud?','¿Cuánto me subvencionan?','¿Cómo funciona la financiación?','¿Qué diferencia hay entre riego completo y cambio de gomas?','¿Qué es el croquis y cuándo lo necesito?','¿Puedo marcar varias fincas a la vez?'];
 const log=$b('#botLog');
 function add(html,who){ const d=document.createElement('div'); d.className='bm '+who; d.innerHTML=html; log.appendChild(d); log.scrollTop=log.scrollHeight; }
 function sugs(list){ const w=document.createElement('div'); w.className='bot-sug'; list.forEach(q=>{ const b=document.createElement('button'); b.type='button'; b.textContent=q; b.onclick=()=>ask(q); w.appendChild(b); }); log.appendChild(w); log.scrollTop=log.scrollHeight; }
