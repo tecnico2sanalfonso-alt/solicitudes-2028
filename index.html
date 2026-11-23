@@ -189,6 +189,29 @@ table.t tfoot td{font-weight:700;border-top:2px solid var(--ink);border-bottom:0
 .check{display:flex;gap:10px;align-items:flex-start;margin-top:14px;font-size:13.5px}
 .check input{width:20px;height:20px;margin:0;accent-color:var(--orange);flex:none}
 .file{display:block;width:100%;padding:7px 0;font-size:13px}
+.extbox{border:1px solid var(--line);border-radius:3px;margin-top:20px}
+.exthd{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:14px;flex-wrap:wrap}
+.seg2{display:inline-flex;border:1px solid #b9c2bd;border-radius:3px;overflow:hidden}
+.seg2 button{border:0;background:#fff;padding:8px 18px;cursor:pointer;font-size:14px;border-right:1px solid #b9c2bd}
+.seg2 button:last-child{border-right:0}
+.seg2 button.on{background:var(--green);color:#fff}
+#extBody{padding:0 14px 14px}
+.exthead,.exr{display:grid;grid-template-columns:30px minmax(0,1fr) 150px 170px 110px;gap:10px;align-items:center}
+.exthead{padding:8px 0;border-bottom:1px solid var(--line);font-size:11px;letter-spacing:.6px;text-transform:uppercase;color:var(--muted);font-weight:600}
+.exr{padding:8px 0;border-bottom:1px solid var(--line-2);font-size:13.5px}
+.exr .cb{width:22px;height:22px;border-radius:3px;border:2px solid var(--orange);display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;background:#fff;cursor:pointer}
+.exr.on .cb{background:var(--orange)}
+.exr.on{background:var(--orange-soft)}
+.exr .nm{cursor:pointer}
+.exr .q{display:flex;gap:6px;align-items:center}
+.exr .q input{height:34px;text-align:right}
+.exr .q span{font-size:12.5px;color:var(--muted);min-width:20px}
+.exr select{height:34px;font-size:13px;padding:0 6px}
+.exr .im{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.exr input:disabled,.exr select:disabled{background:transparent;border-color:transparent;color:var(--muted)}
+textarea{width:100%;border:1px solid #b9c2bd;border-radius:3px;padding:9px 11px;font:inherit;resize:vertical}
+textarea:focus{border-color:var(--green);outline:none;box-shadow:0 0 0 2px rgba(31,90,67,.15)}
+@media (max-width:760px){.exthead{display:none}.exr{grid-template-columns:30px 1fr 1fr}.exr .nm{grid-column:2/4}.exr .q{grid-column:2}.exr select{grid-column:3}.exr .im{grid-column:2/4}.exr .cb{grid-row:1/4}}
 .lnk{border:0;background:none;padding:0;margin-top:4px;color:var(--red);font-size:12px;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .up{display:block;color:var(--muted);font-size:12px}
 .foot{color:var(--muted);font-size:11.5px;text-align:center;padding:8px 0 26px}
@@ -425,6 +448,22 @@ table.t tfoot td{font-weight:700;border-top:2px solid var(--ink);border-bottom:0
       </div>
     </div>
 
+    <div class="extbox" id="extBox">
+      <div class="exthd">
+        <div><h3 style="margin:0 0 2px">¿Hay algo fuera de lo normal en las fincas a transformar?</h3>
+        <p class="note" style="margin:0">Por ejemplo: muros o bancales, cabezal de riego, nivelaciones, tuberías de conducción…</p></div>
+        <div class="seg2" id="extSeg"><button type="button" data-v="0" class="on">No</button><button type="button" data-v="1">Sí</button></div>
+      </div>
+      <div id="extBody" class="hidden">
+        <div class="exthead"><span></span><span>Elemento</span><span>Cantidad</span><span>Finca</span><span style="text-align:right">Importe</span></div>
+        <div id="extList"></div>
+        <label class="f" for="extObs" style="margin-top:12px">Descripción u observaciones</label>
+        <textarea id="extObs" rows="3" placeholder="Indique lo que considere necesario: ubicación, dimensiones, estado actual…"></textarea>
+        <p class="note" style="margin:8px 0 0">Importes estimados de referencia, a confirmar por los técnicos de la cooperativa, que valorarán también si cada elemento es subvencionable.</p>
+        <div id="extErr" class="warn"></div>
+      </div>
+    </div>
+
     <div class="actions" style="border-top:1px solid var(--line);padding-top:18px">
       <button class="btn ghost" id="back1">Volver</button>
       <button class="btn pri" id="noMore">No más fincas · Ver presupuesto</button>
@@ -500,6 +539,23 @@ const CFG = {
     "Tango":      {Carrizo:8.2, Citrumelo:8.2, FA:9.6, Planchas:1.5},
     "Valencia":   {Carrizo:5.25, Citrumelo:5.25, FA:6.6}
   },
+  // Elementos fuera de lo normal: precios de referencia actuales (sin IVA), estimados para citricultura
+  // en Castellón. Revisar con proformas. u = unidad de medida.
+  extras: [
+    {k:'cabezal',     t:'Cabezal de riego (filtrado, programador y valvulería)', u:'ud', p:5200},
+    {k:'fertirr',     t:'Equipo de fertirrigación (depósitos e inyector)',       u:'ud', p:1500},
+    {k:'electrov',    t:'Electroválvulas / sectorización del riego',             u:'ud', p:180},
+    {k:'conduccion',  t:'Tubería general de conducción enterrada',              u:'m',  p:14},
+    {k:'arqueta',     t:'Arqueta o toma de agua',                                u:'ud', p:650},
+    {k:'muro',        t:'Muro de contención o bancal (hasta 1 m de altura)',     u:'m',  p:140},
+    {k:'margen',      t:'Reparación de márgenes o ribazos',                      u:'m',  p:50},
+    {k:'nivelacion',  t:'Nivelación o abancalamiento con maquinaria',            u:'ha', p:1400},
+    {k:'desfonde',    t:'Desfonde o subsolado profundo',                         u:'ha', p:800},
+    {k:'despedregado',t:'Despedregado',                                          u:'ha', p:700},
+    {k:'enmienda',    t:'Enmienda orgánica de fondo',                            u:'ha', p:1000},
+    {k:'cortavientos',t:'Cortavientos (malla)',                                  u:'m',  p:11},
+    {k:'otro',        t:'Otro elemento (descríbalo abajo)',                      u:'',   p:0}
+  ],
   licencias: { "Leanri": {base:"arbol", p:40}, "Tango": {base:"m2", p:2.8} }
 };
 /* ================================================================== */
@@ -553,7 +609,7 @@ async function buscar(){
   catch(err){ m.innerHTML='<div class="msg err">No se ha podido consultar el registro. Compruebe la conexión e inténtelo de nuevo.</div>'; return; }
   finally{ $('#bDni').disabled=false; $('#bDni').textContent='Buscar'; }
   if(!s){ m.innerHTML='<div class="msg err">No encontramos ese DNI/NIF entre los socios con fincas registradas. Compruébelo o contacte con la oficina de la cooperativa.</div>'; $('#s1b').classList.add('hidden'); return; }
-  if(S.dni!==d){ S.lines=[]; S.cur=null; S.socio=s; fillFilters(); }
+  if(S.dni!==d){ S.lines=[]; S.cur=null; S.ext={on:'0',it:{},obs:''}; S.socio=s; fillFilters(); }
   S.dni=d; S.socio=s; m.innerHTML='';
   $('#nom').textContent=s.n; $('#ncod').textContent=s.c; $('#nrec').textContent=s.f.length;
   $('#nsup').textContent=num(s.f.reduce((a,f)=>a+f[4],0)/10000,4)+' ha';
@@ -769,7 +825,7 @@ function commitLine(){
 }
 $('#saveF').onclick=()=>{ if(commitLine()) $('#q').focus(); };
 $('#cancelF').onclick=closeCfg;
-function renderChips(){
+function renderChips(){ setTimeout(renderExtras,0);
   $('#chipsHd').classList.toggle('hidden',!S.lines.length);
   $('#chips').innerHTML = S.lines.map((l,i)=>{const f=S.socio.f[l.idx];return `<div class="chip"><span><b style="text-align:left">${esc(f[0])}</b></span><span class="ad">${esc(f[3])} · ${esc(lineDesc(l))}</span><b>${eur(lineCost(l).tot)}</b><span class="bt"><button data-e="${i}">Editar</button><button class="del" data-d="${i}">Eliminar</button></span></div>`}).join('');
   $('#addedTot').textContent = S.lines.length ? `${S.lines.length} finca${S.lines.length>1?'s':''} · ${eur(S.lines.reduce((a,l)=>a+lineCost(l).tot,0))}` : '';
@@ -784,6 +840,7 @@ $('#noMore').onclick=()=>{
   if(S.cur && (S.cur.on.acond||S.cur.on.riego||S.cur.on.mat)){ if(!commitLine()) return; }
   else if(S.cur){ closeCfg(); }
   if(!S.lines.length){ $('#lineErr').textContent=''; alertBox('Añada al menos una finca antes de continuar.'); return; }
+  const ee=extErrors(); if(ee){ $('#extErr').textContent=ee; $('#extBox').scrollIntoView({behavior:'smooth',block:'center'}); return; }
   step(3);
 };
 function alertBox(t){ const d=document.createElement('div'); d.className='msg err'; d.textContent=t; $('.search').before(d); setTimeout(()=>d.remove(),3500); }
@@ -799,9 +856,54 @@ function planHTML(T,cls){
   <tbody>${T.plan.map(p=>`<tr><td>${p.y}º año${p.t?'':' · sin intereses'}</td><td class="r">${eur(p.pend)}</td><td class="r">${num(p.t*100)} %</td><td class="r">${eur(p.cap)}</td><td class="r">${eur(p.int)}</td><td class="r"><b>${eur(p.cuota)}</b></td></tr>`).join('')}</tbody>
   <tfoot><tr><td colspan="3">Total a pagar</td><td class="r">${eur(T.apo)}</td><td class="r">${eur(T.int)}</td><td class="r">${eur(T.apo+T.int)}</td></tr></tfoot></table>`;
 }
+/* ----- elementos fuera de lo normal ----- */
+S.ext={on:'0', it:{}, obs:''};
+function extFincas(){ const seen=new Set(), out=[]; S.lines.forEach(l=>{ if(!seen.has(l.idx)){ seen.add(l.idx); out.push(l.idx); } }); return out; }
+function extSupDefault(fi){ return S.lines.filter(l=>fi==='g'||String(l.idx)===String(fi)).reduce((a,l)=>a+lineCost(l).sup,0); }
+function extCost(){ return CFG.extras.reduce((a,e)=>{ const x=S.ext.it[e.k]; return a+(S.ext.on==='1'&&x&&x.on?(x.q||0)*e.p:0); },0); }
+function extRows(){ return S.ext.on!=='1'?[]:CFG.extras.filter(e=>S.ext.it[e.k]&&S.ext.it[e.k].on).map(e=>{ const x=S.ext.it[e.k];
+  const fin = x.f==='g' ? 'General / varias fincas' : (S.socio.f[+x.f]?S.socio.f[+x.f][0]:'General / varias fincas');
+  return {e, q:x.q||0, fin, imp:(x.q||0)*e.p}; }); }
+function renderExtras(){
+  const fs=extFincas(); const opts='<option value="g">General / varias</option>'+fs.map(i=>`<option value="${i}">${esc(S.socio.f[i][0])}</option>`).join('');
+  Object.values(S.ext.it).forEach(x=>{ if(x.f!=='g' && !fs.includes(+x.f)) x.f='g'; });
+  $('#extList').innerHTML=CFG.extras.map(e=>{ const x=S.ext.it[e.k]||{}; const on=!!x.on;
+    return `<div class="exr ${on?'on':''}" data-k="${e.k}"><span class="cb" role="checkbox" aria-checked="${on}">${on?'✓':''}</span>
+      <span class="nm">${esc(e.t)}</span>
+      <span class="q">${e.u?`<input type="number" min="0" step="${e.u==='ha'?'0.0001':'1'}" value="${on&&x.q!=null?x.q:''}" ${on?'':'disabled'} aria-label="Cantidad"><span>${e.u}</span>`:'<span>A valorar</span>'}</span>
+      <select ${on?'':'disabled'} aria-label="Finca">${opts}</select>
+      <span class="im">${on?(e.p?eur((x.q||0)*e.p):'A valorar'):''}</span></div>`; }).join('');
+  $$('#extList .exr').forEach(r=>{ const x=S.ext.it[r.dataset.k]; if(x) r.querySelector('select').value=x.f||'g'; });
+  $('#extBody').classList.toggle('hidden',S.ext.on!=='1');
+  $$('#extSeg button').forEach(b=>b.classList.toggle('on',b.dataset.v===S.ext.on));
+  $('#extObs').value=S.ext.obs;
+}
+$('#extSeg').onclick=e=>{ const b=e.target.closest('button'); if(!b) return; S.ext.on=b.dataset.v; $('#extErr').textContent=''; renderExtras(); };
+$('#extList').addEventListener('click',e=>{
+  if(!e.target.closest('.cb,.nm')) return;
+  const r=e.target.closest('.exr'), k=r.dataset.k, el=CFG.extras.find(x=>x.k===k);
+  const x=S.ext.it[k]||(S.ext.it[k]={on:false,q:null,f:'g'}); x.on=!x.on;
+  if(x.on && x.q==null) x.q = el.u==='ud'?1 : el.u==='ha'? +extSupDefault(x.f).toFixed(4) : null;
+  renderExtras(); $('#extErr').textContent='';
+  if(x.on && el.u==='m') setTimeout(()=>$(`#extList .exr[data-k="${k}"] input`)?.focus(),30);
+});
+$('#extList').addEventListener('input',e=>{ const r=e.target.closest('.exr'); if(!r||e.target.tagName!=='INPUT') return; const x=S.ext.it[r.dataset.k]; x.q=parseFloat(e.target.value)||0;
+  const el=CFG.extras.find(z=>z.k===r.dataset.k); r.querySelector('.im').textContent=el.p?eur(x.q*el.p):'A valorar'; });
+$('#extList').addEventListener('change',e=>{ if(e.target.tagName!=='SELECT') return; const r=e.target.closest('.exr'), k=r.dataset.k, x=S.ext.it[k], el=CFG.extras.find(z=>z.k===k);
+  x.f=e.target.value; if(el.u==='ha'){ x.q=+extSupDefault(x.f).toFixed(4); } renderExtras(); });
+$('#extObs').addEventListener('input',e=>{ S.ext.obs=e.target.value; $('#extErr').textContent=''; });
+function extErrors(){
+  if(S.ext.on!=='1') return '';
+  const sel=CFG.extras.filter(e=>S.ext.it[e.k]&&S.ext.it[e.k].on);
+  if(!sel.length) return 'Marque al menos un elemento o responda «No» a la pregunta.';
+  const sinQ=sel.filter(e=>e.u && !(S.ext.it[e.k].q>0)); if(sinQ.length) return 'Indique la cantidad de: '+sinQ.map(e=>e.t).join(', ')+'.';
+  if(S.ext.it.otro&&S.ext.it.otro.on&&!S.ext.obs.trim()) return 'Describa el «otro elemento» en el cuadro de observaciones.';
+  return '';
+}
 function totals(){
   const rs=S.lines.map(lineCost);
   const T={ac:0,ri:0,pl:0,li:0,tot:0}; rs.forEach(r=>{for(const k in T)T[k]+=r[k];});
+  T.ex=extCost(); T.tot+=T.ex;
   T.sub=T.tot*CFG.ayuda; T.apo=T.tot-T.sub; T.finOk=T.apo>CFG.umbralFinanciacion;
   T.fin=T.finOk && $('#fin')?.checked; T.plan=plan(T.apo);
   T.int=T.plan.reduce((a,p)=>a+p.int,0);
@@ -823,7 +925,7 @@ function renderRes(){
   const {rs,T}=totals();
   $('#s3sub').textContent=`${S.socio.n} · Socio/a de ${entidad()} · Nº ${S.socio.c} · ${S.lines.length} finca${S.lines.length>1?'s':''}`;
   $('#tRes').innerHTML=`<thead><tr><th>Finca</th><th>Actuaciones</th><th class="r">Sup. (ha)</th><th class="r">Acond.</th><th class="r">Riego</th><th class="r">Material veg.</th><th class="r">Total</th></tr></thead>
-  <tbody>${S.lines.map((l,i)=>{const f=S.socio.f[l.idx],r=rs[i];return `<tr><td style="min-width:190px"><b>${esc(f[0])}</b> · ${esc(f[3])}<br><span class="note">${esc(f[1])} · ${f[6]?'Partida '+esc(f[6])+' · ':''}${sig(f)}</span><br><button class="lnk" data-del="${i}">Eliminar finca</button></td><td style="min-width:150px">${esc(lineDesc(l))}</td><td class="r">${num(r.sup,4)}</td><td class="r">${eur(r.ac)}</td><td class="r">${eur(r.ri)}</td><td class="r">${eur(r.pl+r.li)}</td><td class="r"><b>${eur(r.tot)}</b></td></tr>`}).join('')}</tbody>
+  <tbody>${S.lines.map((l,i)=>{const f=S.socio.f[l.idx],r=rs[i];return `<tr><td style="min-width:190px"><b>${esc(f[0])}</b> · ${esc(f[3])}<br><span class="note">${esc(f[1])} · ${f[6]?'Partida '+esc(f[6])+' · ':''}${sig(f)}</span><br><button class="lnk" data-del="${i}">Eliminar finca</button></td><td style="min-width:150px">${esc(lineDesc(l))}</td><td class="r">${num(r.sup,4)}</td><td class="r">${eur(r.ac)}</td><td class="r">${eur(r.ri)}</td><td class="r">${eur(r.pl+r.li)}</td><td class="r"><b>${eur(r.tot)}</b></td></tr>`}).join('')}${extRows().map(x=>`<tr><td><b>Elemento especial</b><br><span class="note">${esc(x.fin)}</span></td><td>${esc(x.e.t)}${x.e.u?` · ${num(x.q,x.e.u==='ha'?4:0)} ${x.e.u}`:''}</td><td class="r">–</td><td class="r">–</td><td class="r">–</td><td class="r">–</td><td class="r"><b>${x.e.p?eur(x.imp):'A valorar'}</b></td></tr>`).join('')}</tbody>
   <tfoot><tr><td colspan="2">Total</td><td class="r">${num(rs.reduce((a,r)=>a+r.sup,0),4)}</td><td class="r">${eur(T.ac)}</td><td class="r">${eur(T.ri)}</td><td class="r">${eur(T.pl+T.li)}</td><td class="r">${eur(T.tot)}</td></tr></tfoot>`;
   $('#finBox').innerHTML = T.finOk
     ? `<label class="check" style="margin:0"><input type="checkbox" id="fin" ${finWas?'checked':''}><span>Deseo financiar mi aportación en ${CFG.aniosFinanciacion} años: <b>el primer año sin intereses</b> y el 2º y 3º al ${num(CFG.interesAnual[1]*100)} % sobre el capital pendiente.</span></label>`
@@ -851,12 +953,22 @@ $('#acepto').onchange=e=>$('#pdf').disabled=!e.target.checked;
 
 /* ---------- PDF ---------- */
 function payload(){
+  const P=payload0();
+  extRows().forEach(x=>P.fincas.push({finca:x.fin, termino:'', sigpac:'', variedadActual:'', sup:'', supRecinto:'', recinto:'Elemento especial', partida:'',
+    acondicionamiento: x.e.t + (x.e.u?` (${String(x.q).replace('.',',')} ${x.e.u} × ${String(x.e.p).replace('.',',')} €/${x.e.u})`:' (a valorar)') + (x.e.k==='otro'&&S.ext.obs.trim()?': '+S.ext.obs.trim():''),
+    riego:'', variedadNueva:'', patron:'', marco:'', arboles:'', croquis:null, eurAcond:0, eurRiego:0, eurMaterial:0, eurTotal:+x.imp.toFixed(2)}));
+  if(S.ext.on==='1' && S.ext.obs.trim() && !(S.ext.it.otro&&S.ext.it.otro.on)) P.fincas.push({finca:'Observaciones', termino:'', sigpac:'', variedadActual:'', sup:'', supRecinto:'', recinto:'Elemento especial', partida:'',
+    acondicionamiento:S.ext.obs.trim(), riego:'', variedadNueva:'', patron:'', marco:'', arboles:'', croquis:null, eurAcond:0, eurRiego:0, eurMaterial:0, eurTotal:0});
+  return P;
+}
+function payload0(){
   const {rs,T}=totals();
   return { fechaEnvio:new Date().toISOString(), entidad:entidad(), dni:S.dni, nombre:S.socio.n, socio:S.socio.c,
     telefono:$('#tel').value, email:$('#mail').value, domicilio:$('#dom').value, contactoActualizado:contactoCambiado().join(', '), tipo:$('#tipo').value, fecha:$('#fecha').value,
     fincas:S.lines.map((l,i)=>{const f=S.socio.f[l.idx],r=rs[i];return {finca:f[0],termino:f[1],sigpac:f[2],variedadActual:f[3],sup:+r.sup.toFixed(4),
       acondicionamiento:l.on.acond?CFG.acond[l.acond].t:'',riego:l.on.riego?CFG.riego[l.riego].t:'',variedadNueva:l.on.mat?l.var:'',patron:l.on.mat?l.pat:'',
       marco:l.on.mat?`${l.mx}x${l.my}`:'',arboles:r.arb, recinto:l.total==='0'?'Parcial':'100 %', supRecinto:+fha(f).toFixed(4), croquis:l.total==='0'&&l.croquis?{name:l.croquis.name,type:l.croquis.type,data:l.croquis.data}:null, partida:f[6]||'',eurAcond:+r.ac.toFixed(2),eurRiego:+r.ri.toFixed(2),eurMaterial:+(r.pl+r.li).toFixed(2),eurTotal:+r.tot.toFixed(2)}}),
+    elementos: extRows().map(x=>({elemento:x.e.t, cantidad:x.q, unidad:x.e.u, precio:x.e.p, finca:x.fin, importe:+x.imp.toFixed(2)})), observacionesElementos:S.ext.obs.trim(),
     acondicionamientoTotal:+T.ac.toFixed(2), riegoTotal:+T.ri.toFixed(2), materialTotal:+(T.pl+T.li).toFixed(2), cuotas:T.fin?T.plan.map(p=>+p.cuota.toFixed(2)):[],
     inversion:+T.tot.toFixed(2), ayuda:+T.sub.toFixed(2), aportacion:+T.apo.toFixed(2), financiacion:T.fin?'SI':'NO', intereses:+T.int.toFixed(2) };
 }
@@ -871,6 +983,7 @@ function docHTML(){
   </div></div>
   <table class="lines"><colgroup><col class="w1"><col class="w2"><col class="w3"><col class="w4"><col><col><col><col><col><col></colgroup><thead><tr><th>Nº finca</th><th>Término / SIGPAC</th><th>Variedad actual</th><th>Actuaciones solicitadas</th><th class="r">Sup. (ha)</th><th class="r">Árboles</th><th class="r">Acond. (1.1.4)</th><th class="r">Riego (1.1.1)</th><th class="r">Mat. veg. (1.2.3)</th><th class="r">Total</th></tr></thead>
   <tbody>${S.lines.map((l,i)=>{const f=S.socio.f[l.idx],r=rs[i];return `<tr><td>${esc(f[0])}</td><td>${esc(f[1])}<br>${f[6]?esc(f[6])+' · ':''}${sig(f)}</td><td>${esc(f[3])}</td><td>${lineDescP(l)}</td><td class="r">${num(r.sup,4)}</td><td class="r">${r.arb?num(r.arb):'–'}</td><td class="r">${eur(r.ac)}</td><td class="r">${eur(r.ri)}</td><td class="r">${eur(r.pl+r.li)}</td><td class="r">${eur(r.tot)}</td></tr>`}).join('')}</tbody>
+  ${extRows().map(x=>`<tr><td>Elemento especial</td><td>${esc(x.fin)}</td><td>–</td><td>${esc(x.e.t)}${x.e.u?`<span class="up">${num(x.q,x.e.u==='ha'?4:0)} ${x.e.u} × ${eur(x.e.p)}/${x.e.u}</span>`:'<span class="up">Importe a valorar por los técnicos</span>'}</td><td class="r">–</td><td class="r">–</td><td class="r">–</td><td class="r">–</td><td class="r">–</td><td class="r">${x.e.p?eur(x.imp):'A valorar'}</td></tr>`).join('')}
   <tfoot><tr><td colspan="4">TOTAL</td><td class="r">${num(rs.reduce((a,r)=>a+r.sup,0),4)}</td><td class="r">${num(rs.reduce((a,r)=>a+r.arb,0))}</td><td class="r">${eur(T.ac)}</td><td class="r">${eur(T.ri)}</td><td class="r">${eur(T.pl+T.li)}</td><td class="r">${eur(T.tot)}</td></tr></tfoot></table>
   <table class="res"><tbody>
     <tr><td>Inversión total aproximada</td><td class="r">${eur(T.tot)}</td></tr>
@@ -879,6 +992,7 @@ function docHTML(){
     <tr><td>Financiación a ${CFG.aniosFinanciacion} años (1º año sin intereses; 2º y 3º al ${num(CFG.interesAnual[1]*100)} %)</td><td class="r">${T.fin?'SÍ':'NO'}</td></tr>
   </tbody></table>
   ${T.fin?`<div class="planpdf"><b>Plan de pagos de la aportación</b>${planHTML(T,'')}</div>`:''}
+  ${S.ext.on==='1'?`<div class="legal"><h4>Elementos fuera de lo normal</h4>Importes estimados de referencia, a confirmar por los técnicos de la cooperativa, que valorarán su subvencionabilidad.${S.ext.obs.trim()?' Observaciones del socio: '+esc(S.ext.obs.trim()):''}</div>`:''}
   <div class="legal">
     <h3 class="ch">No será subvencionable</h3>a) La retirada de gomas antiguas y de las raíces extraídas con los ganchos. b) La mano de obra de la plantación (realización de hoyos, plantación y riego). c) El diseño de la nueva plantación.
     <h4>Desistimiento</h4>${esc($('#desistTxt').textContent)}
@@ -1005,6 +1119,8 @@ const FAQ = [
   a:'El <b>cambio de riego completo</b> renueva toda la instalación de goteo de la parcela. El <b>cambio de gomas</b> solo sustituye las tuberías portagoteros y cuesta aproximadamente <b>un tercio</b> del riego completo.'},
  {q:'¿Con arranque o sin arranque?', k:['arranque','arrancar','sin arranque','preparacion','acondicionamiento','terreno'],
   a:'<b>Con arranque</b>: se arrancan los árboles actuales y se prepara el terreno para la nueva plantación. <b>Sin arranque</b>: la parcela ya está libre y solo hay que preparar el terreno.'},
+ {q:'¿Y si en mi finca hay algo fuera de lo normal?', k:['fuera de lo normal','muro','muros','bancal','cabezal','nivelacion','abancalamiento','pozo','bomba','tuberia','conduccion','especial','extra','cortavientos','desfonde','piedras'],
+  a:'En la pantalla de fincas, responda <b>Sí</b> a «¿Hay algo fuera de lo normal…?» y marque lo que corresponda (muros, cabezal de riego, nivelación, tubería de conducción, etc.), con la cantidad y la finca. Se suma un importe estimado al presupuesto; los técnicos lo confirmarán y valorarán si es subvencionable. Si no está en la lista, marque «Otro elemento» y descríbalo.'},
  {q:'¿Qué no es subvencionable?', k:['no subvencionable','no entra','excluido','no se paga','mano de obra'],
   a:'No son subvencionables:<ul><li>La retirada de gomas antiguas y de las raíces extraídas con los ganchos.</li><li>La mano de obra de la plantación (hoyos, plantación y riego).</li><li>El diseño de la nueva plantación.</li></ul>'},
  {q:'¿Qué es el croquis y cuándo lo necesito?', k:['croquis','plano','dibujo','parte','parcial','100','porcentaje recinto','mapa','sigpac visor'],
