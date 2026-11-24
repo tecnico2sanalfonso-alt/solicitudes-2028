@@ -430,6 +430,9 @@ textarea:focus{border-color:var(--green);outline:none;box-shadow:0 0 0 2px rgba(
         <label class="f">Tipo de actuación en riego</label>
         <div class="seg" data-k="riego"><button data-v="completo">Cambio de riego completo</button><button data-v="gomas">Cambio de gomas</button></div>
         <div class="price-hint" id="h-riego"></div>
+        <label class="f" style="margin-top:12px">Mano de obra de la instalación del riego</label>
+        <div class="seg" data-k="moR"><button data-v="propia">Propia (la pongo yo)</button><button data-v="coop">La pone la cooperativa</button></div>
+        <div class="price-hint">La mano de obra no es subvencionable. Si la pone la cooperativa, se facturará aparte.</div>
       </div>
       <div class="opts hidden" id="o-mat">
         <div class="grid2">
@@ -437,6 +440,9 @@ textarea:focus{border-color:var(--green);outline:none;box-shadow:0 0 0 2px rgba(
           <div><label class="f" for="pat">Patrón / tipo</label><select id="pat"></select></div>
         </div>
         <div class="price-hint" id="h-mat"></div>
+        <label class="f" style="margin-top:12px">Mano de obra de la plantación o el injerto</label>
+        <div class="seg" data-k="moM"><button data-v="propia">Propia (la pongo yo)</button><button data-v="coop">La pone la cooperativa</button></div>
+        <div class="price-hint">La mano de obra no es subvencionable. Si la pone la cooperativa, se facturará aparte.</div>
       </div>
 
       <div class="sumbar"><div><div class="lbl" id="lineLbl">Presupuesto orientativo de esta finca</div><div id="lineDet" class="lbl"></div></div><div class="val" id="lineTot">0,00 €</div></div>
@@ -480,6 +486,8 @@ textarea:focus{border-color:var(--green);outline:none;box-shadow:0 0 0 2px rgba(
     </div>
     <div class="totals" id="totals"></div>
     <div id="finBox" class="check"></div>
+    <div style="margin-top:16px"><label class="f" for="obsSol">Observaciones de la solicitud</label>
+      <textarea id="obsSol" rows="3" maxlength="1500" placeholder="Cualquier aclaración que quiera trasladar a la cooperativa (accesos, fechas preferentes, situación de la finca…)"></textarea></div>
     <div id="planBox" style="overflow:auto"></div>
     <div class="cond">
       <h3 class="ch">No será subvencionable</h3>
@@ -580,7 +588,7 @@ $$('.coop').forEach(e=>e.textContent=CFG.cooperativa);
 const S = { dni:null, socio:null, lines:[], cur:null };
 
 /* ---------- pasos ---------- */
-function canGo(n){ if(S.enviada) return n===4; return n===0 || (n===1 && !!S.entidad) || (n===2 && !!S.entidad && !!S.socio) || (n===3 && !!S.socio && S.lines.length>0); }
+function canGo(n){ if(S.enviada) return n===4; if(n>=2 && contactoErr()) return false; return n===0 || (n===1 && !!S.entidad) || (n===2 && !!S.entidad && !!S.socio) || (n===3 && !!S.socio && S.lines.length>0); }
 function step(n){
   if(!canGo(n)) return;
   if(n===2){ renderList(); renderChips(); }
@@ -634,8 +642,15 @@ $('#bDni').onclick=buscar;
 $('#dni').addEventListener('keydown',e=>{ if(e.key==='Enter') buscar(); });
 $('#fecha').valueAsDate=new Date();
 const entidad = () => S.entidad || '';
+function contactoErr(){
+  const t=$('#tel').value.replace(/[\s.\-]/g,'').replace(/^(\+34|0034)/,''), m=$('#mail').value.trim();
+  if(!/^[6789]\d{8}$/.test(t)) return 'Indique un teléfono de contacto válido (9 cifras).';
+  if(m && !/^[^@\s;,]+@[^@\s;,]+\.[a-z]{2,}$/i.test(m)) return 'El correo electrónico no parece correcto. Corríjalo o déjelo en blanco.';
+  return '';
+}
 $('#go2').onclick=()=>{
-  step(2); };
+  const e=contactoErr(); if(e){ $('#dniMsg').innerHTML=`<div class="msg err">${e}</div>`; $('#dniMsg').scrollIntoView({behavior:'smooth',block:'center'}); return; }
+  $('#dniMsg').innerHTML=''; step(2); };
 $('#back0').onclick=()=>step(0);
 
 /* ---------- paso 2: lista de fincas ---------- */
@@ -686,7 +701,7 @@ $('#fh').onclick=e=>{ const b=e.target.closest('[data-sort]'); if(!b) return; co
 const normTxt = s => String(s??'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
 $('#q').addEventListener('input',renderList);
 const sinSup = i => !(S.socio.f[i][4]>0);
-const blank = () => ({idxs:[], total:'1', croquis:null, sup:null, mx:CFG.marco[0], my:CFG.marco[1], acond:null, riego:null, var:'', pat:'', on:{acond:false,riego:false,mat:false}, edit:null});
+const blank = () => ({idxs:[], total:'1', croquis:null, sup:null, mx:CFG.marco[0], my:CFG.marco[1], acond:null, riego:null, moR:'', moM:'', var:'', pat:'', on:{acond:false,riego:false,mat:false}, edit:null});
 $('#flist').addEventListener('click',e=>{
   const el=e.target.closest('.fi'); if(!el||el.classList.contains('used')) return;
   const i=+el.dataset.i;
@@ -773,7 +788,7 @@ $('#pat').onchange=()=>{ S.cur.pat=$('#pat').value; calc(); };
 /* una línea por finca a partir de la selección actual */
 function curLines(){
   const c=S.cur, multi=c.idxs.length>1, parc=!multi&&c.total==='0';
-  return c.idxs.map(i=>({idx:i, total:parc?'0':'1', croquis:parc?c.croquis:null, sup: parc ? (c.sup||0) : +fha(S.socio.f[i]).toFixed(4), mx:c.mx, my:c.my, acond:c.acond, riego:c.riego, var:c.var, pat:c.pat, on:{...c.on}}));
+  return c.idxs.map(i=>({idx:i, total:parc?'0':'1', croquis:parc?c.croquis:null, sup: parc ? (c.sup||0) : +fha(S.socio.f[i]).toFixed(4), mx:c.mx, my:c.my, acond:c.acond, riego:c.riego, moR:c.moR||'', moM:c.moM||'', var:c.var, pat:c.pat, on:{...c.on}}));
 }
 function lineCost(l){
   const f=S.socio.f[l.idx]; const sup = l.sup ?? fha(f);
@@ -799,6 +814,8 @@ function lineErrors(l){
   if(l.on.mat&&!l.var) e.push('Elija la variedad nueva.');
   if(l.on.mat&&l.var&&!l.pat) e.push('Elija el patrón.');
   if(l.on.mat&&!(l.mx>0&&l.my>0)) e.push('Indique el marco de plantación.');
+  if(l.on.riego&&!l.moR) e.push('Indique quién pone la mano de obra del riego.');
+  if(l.on.mat&&!l.moM) e.push('Indique quién pone la mano de obra de la plantación o el injerto.');
   return e;
 }
 function sumR(rs){ const T={sup:0,ac:0,ri:0,pl:0,li:0,arb:0,tot:0}; rs.forEach(r=>{for(const k in T)T[k]+=r[k];}); return T; }
@@ -909,15 +926,16 @@ function totals(){
   T.int=T.plan.reduce((a,p)=>a+p.int,0);
   return {rs,T};
 }
+const MO={'propia':'propia del socio','coop':'de la cooperativa'};
 function lineDesc(l){
-  const a=[]; if(l.total==='0') a.push('Parcial del recinto (croquis)'); if(l.on.acond) a.push(CFG.acond[l.acond].t); if(l.on.riego) a.push(CFG.riego[l.riego].t);
-  if(l.on.mat) a.push(`${l.var} / ${l.pat==='Planchas'?'sobreinjerto':l.pat} (${num(l.mx,1)}×${num(l.my,1)})`); return a.join(' · ');
+  const a=[]; if(l.total==='0') a.push('Parcial del recinto (croquis)'); if(l.on.acond) a.push(CFG.acond[l.acond].t); if(l.on.riego) a.push(CFG.riego[l.riego].t+(l.moR?` (M.O. ${MO[l.moR]})`:''));
+  if(l.on.mat) a.push(`${l.var} / ${l.pat==='Planchas'?'sobreinjerto':l.pat} (${num(l.mx,1)}×${num(l.my,1)})`+(l.moM?` (M.O. ${MO[l.moM]})`:'')); return a.join(' · ');
 }
 function lineDescP(l){
   const a=[]; if(l.total==='0') a.push('<b>Actuación parcial del recinto</b><span class="up">Croquis adjunto: '+esc(l.croquis?l.croquis.name:'')+'</span>');
   if(l.on.acond){ const p=up(CFG.acond[l.acond].p); a.push(`${CFG.acond[l.acond].t}<span class="up">${eur(p)}/ha</span>`); }
-  if(l.on.riego){ const p=up(CFG.riego[l.riego].p); a.push(`${CFG.riego[l.riego].t}<span class="up">${eur(p)}/ha</span>`); }
-  if(l.on.mat){ const lic=CFG.licencias[l.var]; a.push(`${esc(l.var)} / ${l.pat==='Planchas'?'sobreinjerto':esc(l.pat)} (${num(l.mx,1)}×${num(l.my,1)})<span class="up">${eur(up(CFG.plantones[l.var][l.pat]))}/ud${lic?` + licencia ${eur(up(lic.p))}/${lic.base==='arbol'?'árbol':'m²'}`:''}</span>`); }
+  if(l.on.riego){ const p=up(CFG.riego[l.riego].p); a.push(`${CFG.riego[l.riego].t}<span class="up">${eur(p)}/ha · Mano de obra ${MO[l.moR]||'—'}</span>`); }
+  if(l.on.mat){ const lic=CFG.licencias[l.var]; a.push(`${esc(l.var)} / ${l.pat==='Planchas'?'sobreinjerto':esc(l.pat)} (${num(l.mx,1)}×${num(l.my,1)})<span class="up">${eur(up(CFG.plantones[l.var][l.pat]))}/ud${lic?` + licencia ${eur(up(lic.p))}/${lic.base==='arbol'?'árbol':'m²'}`:''} · Mano de obra ${MO[l.moM]||'—'}</span>`); }
   return a.join('<br>');
 }
 function renderRes(){
@@ -953,12 +971,14 @@ $('#acepto').onchange=e=>$('#pdf').disabled=!e.target.checked;
 
 /* ---------- PDF ---------- */
 function payload(){
-  const P=payload0();
+  const P=payload0(); P.observaciones=$('#obsSol').value.trim();
   extRows().forEach(x=>P.fincas.push({finca:x.fin, termino:'', sigpac:'', variedadActual:'', sup:'', supRecinto:'', recinto:'Elemento especial', partida:'',
     acondicionamiento: x.e.t + (x.e.u?` (${String(x.q).replace('.',',')} ${x.e.u} × ${String(x.e.p).replace('.',',')} €/${x.e.u})`:' (a valorar)') + (x.e.k==='otro'&&S.ext.obs.trim()?': '+S.ext.obs.trim():''),
     riego:'', variedadNueva:'', patron:'', marco:'', arboles:'', croquis:null, eurAcond:0, eurRiego:0, eurMaterial:0, eurTotal:+x.imp.toFixed(2)}));
   if(S.ext.on==='1' && S.ext.obs.trim() && !(S.ext.it.otro&&S.ext.it.otro.on)) P.fincas.push({finca:'Observaciones', termino:'', sigpac:'', variedadActual:'', sup:'', supRecinto:'', recinto:'Elemento especial', partida:'',
     acondicionamiento:S.ext.obs.trim(), riego:'', variedadNueva:'', patron:'', marco:'', arboles:'', croquis:null, eurAcond:0, eurRiego:0, eurMaterial:0, eurTotal:0});
+  if(P.observaciones) P.fincas.push({finca:'Observaciones', termino:'', sigpac:'', variedadActual:'', sup:'', supRecinto:'', recinto:'Observaciones de la solicitud', partida:'',
+    acondicionamiento:P.observaciones, riego:'', variedadNueva:'', patron:'', marco:'', arboles:'', croquis:null, eurAcond:0, eurRiego:0, eurMaterial:0, eurTotal:0});
   return P;
 }
 function payload0(){
@@ -966,7 +986,7 @@ function payload0(){
   return { fechaEnvio:new Date().toISOString(), entidad:entidad(), dni:S.dni, nombre:S.socio.n, socio:S.socio.c,
     telefono:$('#tel').value, email:$('#mail').value, domicilio:$('#dom').value, contactoActualizado:contactoCambiado().join(', '), tipo:$('#tipo').value, fecha:$('#fecha').value,
     fincas:S.lines.map((l,i)=>{const f=S.socio.f[l.idx],r=rs[i];return {finca:f[0],termino:f[1],sigpac:f[2],variedadActual:f[3],sup:+r.sup.toFixed(4),
-      acondicionamiento:l.on.acond?CFG.acond[l.acond].t:'',riego:l.on.riego?CFG.riego[l.riego].t:'',variedadNueva:l.on.mat?l.var:'',patron:l.on.mat?l.pat:'',
+      acondicionamiento:l.on.acond?CFG.acond[l.acond].t:'',riego:l.on.riego?CFG.riego[l.riego].t+(l.moR?` · M.O. ${MO[l.moR]}`:''):'',variedadNueva:l.on.mat?l.var+(l.moM?` · M.O. ${MO[l.moM]}`:''):'',manoObraRiego:l.on.riego?l.moR:'',manoObraPlantacion:l.on.mat?l.moM:'',patron:l.on.mat?l.pat:'',
       marco:l.on.mat?`${l.mx}x${l.my}`:'',arboles:r.arb, recinto:l.total==='0'?'Parcial':'100 %', supRecinto:+fha(f).toFixed(4), croquis:l.total==='0'&&l.croquis?{name:l.croquis.name,type:l.croquis.type,data:l.croquis.data}:null, partida:f[6]||'',eurAcond:+r.ac.toFixed(2),eurRiego:+r.ri.toFixed(2),eurMaterial:+(r.pl+r.li).toFixed(2),eurTotal:+r.tot.toFixed(2)}}),
     elementos: extRows().map(x=>({elemento:x.e.t, cantidad:x.q, unidad:x.e.u, precio:x.e.p, finca:x.fin, importe:+x.imp.toFixed(2)})), observacionesElementos:S.ext.obs.trim(),
     acondicionamientoTotal:+T.ac.toFixed(2), riegoTotal:+T.ri.toFixed(2), materialTotal:+(T.pl+T.li).toFixed(2), cuotas:T.fin?T.plan.map(p=>+p.cuota.toFixed(2)):[],
@@ -994,6 +1014,7 @@ function docHTML(){
   ${T.fin?`<div class="planpdf"><b>Plan de pagos de la aportación</b>${planHTML(T,'')}</div>`:''}
   ${S.ext.on==='1'?`<div class="legal"><h4>Elementos fuera de lo normal</h4>Importes estimados de referencia, a confirmar por los técnicos de la cooperativa, que valorarán su subvencionabilidad.${S.ext.obs.trim()?' Observaciones del socio: '+esc(S.ext.obs.trim()):''}</div>`:''}
   <div class="legal">
+    ${$('#obsSol').value.trim()?`<h4>Observaciones del socio</h4>${esc($('#obsSol').value.trim())}`:''}
     <h3 class="ch">No será subvencionable</h3>a) La retirada de gomas antiguas y de las raíces extraídas con los ganchos. b) La mano de obra de la plantación (realización de hoyos, plantación y riego). c) El diseño de la nueva plantación.
     <h4>Desistimiento</h4>${esc($('#desistTxt').textContent)}
   </div>
@@ -1004,7 +1025,7 @@ async function generarPDF(){
   const y=window.scrollY; window.scrollTo(0,0);
   try{
     const opt={margin:[8,10,8,10], image:{type:'jpeg',quality:0.95}, html2canvas:{scale:2,backgroundColor:'#ffffff',scrollX:0,scrollY:0},
-      jsPDF:{unit:'mm',format:'a4',orientation:'landscape'}, pagebreak:{mode:['css','legacy'],avoid:['tr','.sig','.planpdf','.res','.box']}};
+      jsPDF:{unit:'mm',format:'a4',orientation:'landscape'}, pagebreak:{mode:['css','legacy'],avoid:['tr','.sig','.planpdf','.res','.box','.legal','.disc']}};
     const uri=await html2pdf().set(opt).from('<div class="docv">'+docHTML()+'</div>','string').outputPdf('datauristring');
     return uri.split(',')[1];
   } finally { window.scrollTo(0,y); }
@@ -1032,6 +1053,7 @@ $('#dlPdf').onclick=()=>{
 };
 $('#nueva').onclick=()=>{ window.location.reload(); };
 
+window.addEventListener('beforeunload',e=>{ if(!S.enviada && (S.lines.length || S.cur)){ e.preventDefault(); e.returnValue=''; } });
 step(0);
 </script>
 <!-- ============ ASISTENTE DE PREGUNTAS FRECUENTES ============ -->
@@ -1121,6 +1143,10 @@ const FAQ = [
   a:'<b>Con arranque</b>: se arrancan los árboles actuales y se prepara el terreno para la nueva plantación. <b>Sin arranque</b>: la parcela ya está libre y solo hay que preparar el terreno.'},
  {q:'¿Y si en mi finca hay algo fuera de lo normal?', k:['fuera de lo normal','muro','muros','bancal','cabezal','nivelacion','abancalamiento','pozo','bomba','tuberia','conduccion','especial','extra','cortavientos','desfonde','piedras'],
   a:'En la pantalla de fincas, responda <b>Sí</b> a «¿Hay algo fuera de lo normal…?» y marque lo que corresponda (muros, cabezal de riego, nivelación, tubería de conducción, etc.), con la cantidad y la finca. Se suma un importe estimado al presupuesto; los técnicos lo confirmarán y valorarán si es subvencionable. Si no está en la lista, marque «Otro elemento» y descríbalo.'},
+ {q:'¿Quién pone la mano de obra?', k:['mano de obra','quien planta','quien instala','plantar','injertar','montar el riego','instalar','operarios','trabajadores','cuadrilla'],
+  a:'Usted elige, por separado para el <b>riego</b> y para la <b>plantación o el injerto</b>: ponerla usted mismo o que la ponga la cooperativa. La mano de obra <b>no es subvencionable</b>; si la pone la cooperativa, se le facturará aparte.'},
+ {q:'¿Dónde pongo otras aclaraciones?', k:['observaciones','aclaracion','comentario','nota','añadir algo','explicar','otra cosa'],
+  a:'En el último paso, encima del resumen económico, hay un cuadro de <b>Observaciones de la solicitud</b>. Lo que escriba llega a la oficina y aparece en el PDF.'},
  {q:'¿Qué no es subvencionable?', k:['no subvencionable','no entra','excluido','no se paga','mano de obra'],
   a:'No son subvencionables:<ul><li>La retirada de gomas antiguas y de las raíces extraídas con los ganchos.</li><li>La mano de obra de la plantación (hoyos, plantación y riego).</li><li>El diseño de la nueva plantación.</li></ul>'},
  {q:'¿Qué es el croquis y cuándo lo necesito?', k:['croquis','plano','dibujo','parte','parcial','100','porcentaje recinto','mapa','sigpac visor'],
