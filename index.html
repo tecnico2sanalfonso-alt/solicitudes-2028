@@ -252,6 +252,15 @@ textarea:focus{border-color:var(--green);outline:none;box-shadow:0 0 0 2px rgba(
 body.ma .uo, body:not(.ma) .mo{display:none!important}
 .act.blk,.mar.blk{opacity:.5;cursor:not-allowed}
 .act.blk .chk,.mar.blk .cb{border-color:#b9c2bd}
+.delbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:4px 0 14px;padding:10px 14px;border:1px solid var(--line,#dfe5e1);border-radius:3px;background:#fff;font-size:14px}
+.delbar .btn{border-color:#a8231b;color:#a8231b}
+.delbox{margin:-6px 0 16px;padding:14px;border:1px solid #e3c4c1;border-radius:3px;background:#fdf7f6}
+.delbox h4{margin:0 0 8px;font-size:14px}
+.delbox .ds{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid #eedad7;font-size:13.5px}
+.delbox .ds:first-of-type{border-top:0}
+.delbox .ds .note{color:#5b6660}
+.delbox .btn.del{background:#fff;border-color:#a8231b;color:#a8231b;white-space:nowrap}
+.delbox .btn.del.conf{background:#a8231b;color:#fff}
 .lnk{border:0;background:none;padding:0;margin-top:4px;color:var(--red);font-size:12px;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .up{display:block;color:var(--muted);font-size:12px}
 .foot{color:var(--muted);font-size:11.5px;text-align:center;padding:8px 0 26px}
@@ -408,6 +417,8 @@ body.ma .uo, body:not(.ma) .mo{display:none!important}
     <h2><span class="uo">Fincas y actuaciones</span><span class="mo">Fincas y medidas medioambientales</span></h2>
     <p class="sub uo">Marque una o varias fincas y seleccione las actuaciones; se aplicarán por igual a todas las marcadas. Repita el proceso para cada grupo de fincas.</p>
     <p class="sub mo">Marque una o varias fincas y elija las medidas medioambientales; se aplicarán al 100 % de cada recinto marcado. Repita el proceso para cada grupo de fincas.</p>
+    <div class="delbar uo"><span>¿Necesita eliminar una solicitud que ya ha enviado?</span><button type="button" class="btn ghost sm" id="delBtn">Eliminar solicitud</button></div>
+    <div id="delBox" class="delbox hidden uo"></div>
     <div class="mes mo">La actuación está prevista para el <b>mes siguiente a la tramitación</b> de la solicitud: <b class="mesPrev"></b>.</div>
     <div class="added hidden" id="chipsHd"><div class="ah"><span>Fincas incluidas en la solicitud</span><span id="addedTot"></span></div><div id="chips"></div></div>
 
@@ -688,7 +699,7 @@ async function buscar(){
   finally{ $('#bDni').disabled=false; $('#bDni').textContent='Buscar'; }
   if(!s){ m.innerHTML='<div class="msg err">No encontramos ese DNI/NIF entre los socios con fincas registradas. Compruébelo o contacte con la oficina de la cooperativa.</div>'; $('#s1b').classList.add('hidden'); return; }
   if(S.dni!==d){ S.lines=[]; S.cur=null; S.ext={on:'0',it:{},obs:''}; S.socio=s; fillFilters(); }
-  S.dni=d; S.socio=s; S.usados=s.usados||{}; m.innerHTML='';
+  S.dni=d; S.socio=s; S.usados=s.usados||{}; S.sols=null; $('#delBox').classList.add('hidden'); m.innerHTML='';
   $('#nom').textContent=s.n; $('#ncod').textContent=s.c; $('#nrec').textContent=s.f.length;
   $('#nsup').textContent=num(s.f.reduce((a,f)=>a+f[4],0)/10000,4)+' ha';
   $('#s1b').classList.remove('hidden'); $('#back0b').classList.add('hidden');
@@ -781,6 +792,42 @@ function setModo(m){
 }
 function irVia(m){ const e=contactoErr(); if(e){ $('#dniMsg').innerHTML=`<div class="msg err">${e}</div>`; const f=/correo/.test(e)?'#mail':'#tel'; $(f).readOnly=false; $(f).scrollIntoView({behavior:'smooth',block:'center'}); setTimeout(()=>$(f).focus(),300); $('#h-'+f.slice(1)).innerHTML=`<b style="color:var(--red)">${e}</b>`; return; }
   $('#dniMsg').innerHTML=''; setModo(m); step(2); }
+/* ----- eliminar (anular) solicitudes ya enviadas ----- */
+const eur0=x=>Number(x||0).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2,useGrouping:'always'})+' €';
+async function cargaSols(){
+  const s=await srv('getSocio',S.dni); S.usados=(s&&s.usados)||{}; S.sols=((s&&s.sols)||[]).filter(x=>!x.ma); return S.sols;
+}
+function pintaSols(msg){
+  const b=$('#delBox'), L=S.sols||[];
+  b.innerHTML = `<h4>Solicitudes de solicitud única enviadas este año</h4>`+
+    (L.length ? L.map(x=>`<div class="ds"><div><b>${esc(x.id)}</b> · ${esc(x.fecha)} · ${esc(x.tipo)}<br><span class="note">Fincas: ${x.fincas.map(esc).join(', ')||'—'}${x.inversion?' · Inversión aprox. '+eur0(x.inversion):''}</span></div>
+      <button type="button" class="btn sm del" data-id="${esc(x.id)}">Eliminar</button></div>`).join('')
+      : '<p class="note" style="margin:0">No tiene ninguna solicitud única enviada este año.</p>')+
+    `<p class="note" style="margin:10px 0 0">Al eliminarla, la solicitud queda anulada en el registro de la cooperativa, la oficina recibe un aviso y las fincas quedan libres para volver a solicitarlas.</p>`+
+    (msg||'');
+}
+$('#delBtn').onclick=async()=>{
+  const b=$('#delBox');
+  if(!b.classList.contains('hidden')){ b.classList.add('hidden'); return; }
+  b.classList.remove('hidden'); b.innerHTML='<p class="note" style="margin:0">Buscando sus solicitudes…</p>';
+  try{ await cargaSols(); pintaSols(); }catch(e){ b.innerHTML='<div class="msg err">No se han podido consultar sus solicitudes. Inténtelo de nuevo.</div>'; }
+};
+$('#delBox').addEventListener('click',async e=>{
+  const t=e.target.closest('.del'); if(!t||t.disabled) return;
+  if(!t.classList.contains('conf')){
+    $$('#delBox .del.conf').forEach(x=>{x.classList.remove('conf'); x.textContent='Eliminar';});
+    t.classList.add('conf'); t.textContent='Confirmar eliminación'; return;
+  }
+  const id=t.dataset.id; t.disabled=true; t.textContent='Eliminando…';
+  try{
+    await srv('anular',S.dni,id); await cargaSols();
+    pintaSols(`<div class="msg ok">Solicitud ${esc(id)} eliminada. La oficina ha recibido el aviso.</div>`);
+    renderList(); if(S.cur) avisoBloq();
+  }catch(err){
+    t.disabled=false; t.classList.remove('conf'); t.textContent='Eliminar';
+    pintaSols(`<div class="msg err">No se ha podido eliminar la solicitud ${esc(id)}. ${esc(String(err&&err.message||'').replace(/^Error:\s*/,''))}</div>`);
+  }
+});
 $('#goUnica').onclick=()=>irVia('unica');
 $('#goMA').onclick=()=>irVia('ma');
 const MED=k=>CFG.medidas.find(x=>x.k===k);
