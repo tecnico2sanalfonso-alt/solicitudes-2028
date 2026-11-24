@@ -225,6 +225,23 @@ table.t tfoot td{font-weight:700;border-top:2px solid var(--ink);border-bottom:0
 textarea{width:100%;border:1px solid #b9c2bd;border-radius:3px;padding:9px 11px;font:inherit;resize:vertical}
 textarea:focus{border-color:var(--green);outline:none;box-shadow:0 0 0 2px rgba(31,90,67,.15)}
 @media (max-width:760px){.exthead{display:none}.exr{grid-template-columns:30px 1fr 1fr}.exr .nm{grid-column:2/4}.exr .q{grid-column:2}.exr select{grid-column:3}.exr .im{grid-column:2/4}.exr .cb{grid-row:1/4}}
+.vias{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:22px}
+.via{border:1px solid var(--line);border-radius:4px;background:#fff;padding:20px 20px 18px;text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:6px;font:inherit;color:inherit}
+.via:hover{border-color:var(--green);box-shadow:inset 0 3px 0 var(--green)}
+.via b{font-size:16px;letter-spacing:.4px}
+.via span{font-size:13px;color:var(--muted)}
+.via i{font-style:normal;margin-top:8px;font-weight:600;color:var(--green);font-size:13.5px}
+.mabox{margin-top:4px}
+.mar{display:grid;grid-template-columns:30px 62px minmax(0,1fr);gap:10px;align-items:center;padding:9px 6px;border-bottom:1px solid var(--line-2);cursor:pointer;font-size:14px}
+.mar:hover{background:#fafbfa}
+.mar.on{background:var(--orange-soft)}
+.mar .cb{width:22px;height:22px;border-radius:3px;border:2px solid var(--orange);display:grid;place-items:center;font-size:13px;font-weight:800;color:#fff;background:#fff}
+.mar.on .cb{background:var(--orange)}
+.mar code{font-family:inherit;font-weight:700;font-size:13px;color:var(--green)}
+.mes{border-left:3px solid var(--green);background:var(--green-soft);padding:12px 14px;border-radius:3px;font-size:14px;margin:14px 0}
+.mes b{color:var(--green)}
+body.ma .uo, body:not(.ma) .mo{display:none!important}
+@media (max-width:760px){.vias{grid-template-columns:1fr}}
 .lnk{border:0;background:none;padding:0;margin-top:4px;color:var(--red);font-size:12px;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .up{display:block;color:var(--muted);font-size:12px}
 .foot{color:var(--muted);font-size:11.5px;text-align:center;padding:8px 0 26px}
@@ -321,8 +338,8 @@ textarea:focus{border-color:var(--green);outline:none;box-shadow:0 0 0 2px rgba(
   <ol class="steps" id="steps">
     <li data-s="0"><b>1</b><span>Cooperativa</span></li>
     <li data-s="1"><b>2</b><span>Identificación</span></li>
-    <li data-s="2"><b>3</b><span>Fincas y actuaciones</span></li>
-    <li data-s="3"><b>4</b><span>Presupuesto y PDF</span></li>
+    <li data-s="2"><b>3</b><span><span class="uo">Fincas y actuaciones</span><span class="mo">Fincas y medidas</span></span></li>
+    <li data-s="3"><b>4</b><span><span class="uo">Presupuesto y PDF</span><span class="mo">Resumen y envío</span></span></li>
   </ol>
 
   <!-- PASO 0 -->
@@ -363,15 +380,22 @@ textarea:focus{border-color:var(--green);outline:none;box-shadow:0 0 0 2px rgba(
           <select id="tipo"><option>Solicitud inicial</option><option>Modificación de la solicitud inicial</option><option>Desistimiento</option></select></div>
         <div><label class="f" for="fecha">Fecha</label><input id="fecha" type="date"></div>
       </div>
-      <div class="actions"><button class="btn ghost" id="back0">Volver</button><button class="btn pri" id="go2">Continuar</button></div>
+      <label class="f" style="margin-top:22px">¿Qué desea solicitar?</label>
+      <div class="vias" style="margin-top:6px">
+        <button type="button" class="via" id="goUnica"><b>SOLICITUD ÚNICA</b><span>Acondicionamiento + riego + material vegetal</span><i>Continuar →</i></button>
+        <button type="button" class="via" id="goMA"><b>MEDIDAS MEDIOAMBIENTALES</b><span>Mejora o mantenimiento de la calidad del suelo (A.i)</span><i>Continuar →</i></button>
+      </div>
+      <div class="actions"><button class="btn ghost" id="back0">Volver</button><button class="btn pri hidden" id="go2">Continuar</button></div>
     </div>
   </section>
 
   <!-- PASO 2 -->
   <section id="s2" class="card hidden">
     <p class="kicker">Paso 3 de 4</p>
-    <h2>Fincas y actuaciones</h2>
-    <p class="sub">Marque una o varias fincas y seleccione las actuaciones; se aplicarán por igual a todas las marcadas. Repita el proceso para cada grupo de fincas.</p>
+    <h2><span class="uo">Fincas y actuaciones</span><span class="mo">Fincas y medidas medioambientales</span></h2>
+    <p class="sub uo">Marque una o varias fincas y seleccione las actuaciones; se aplicarán por igual a todas las marcadas. Repita el proceso para cada grupo de fincas.</p>
+    <p class="sub mo">Marque una o varias fincas y elija las medidas medioambientales; se aplicarán al 100 % de cada recinto marcado. Repita el proceso para cada grupo de fincas.</p>
+    <div class="mes mo">La actuación está prevista para el <b>mes siguiente a la tramitación</b> de la solicitud: <b class="mesPrev"></b>.</div>
     <div class="added hidden" id="chipsHd"><div class="ah"><span>Fincas incluidas en la solicitud</span><span id="addedTot"></span></div><div id="chips"></div></div>
 
     <div class="search">
@@ -399,15 +423,17 @@ textarea:focus{border-color:var(--green);outline:none;box-shadow:0 0 0 2px rgba(
     </div>
 
     <div id="cfg" class="hidden cfgbox">
-      <div class="ch2">Actuaciones · <span id="selName"></span></div>
+      <div class="ch2"><span class="uo">Actuaciones</span><span class="mo">Medidas</span> · <span id="selName"></span></div>
       <div class="cfgbody">
       <div class="grid3" style="margin-bottom:14px">
         <div><label class="f">Superficie del recinto</label><input id="supF" type="text" disabled></div>
-        <div><label class="f">¿Se actúa sobre el 100 % del recinto?</label><div class="seg" data-k="total" id="segTot"><button data-v="1">Sí, el 100 %</button><button data-v="0">No, solo una parte</button></div><div class="price-hint hidden" id="totMulti" style="margin-top:10px;font-size:14px;color:var(--ink)">Sí, el 100 % de cada recinto</div></div>
-        <div><label class="f">Marco de plantación (m)</label>
+        <div class="uo"><label class="f">¿Se actúa sobre el 100 % del recinto?</label><div class="seg" data-k="total" id="segTot"><button data-v="1">Sí, el 100 %</button><button data-v="0">No, solo una parte</button></div><div class="price-hint hidden" id="totMulti" style="margin-top:10px;font-size:14px;color:var(--ink)">Sí, el 100 % de cada recinto</div></div>
+        <div class="uo"><label class="f">Marco de plantación (m)</label>
           <div style="display:flex;gap:8px;align-items:center"><input id="mx" type="number" step="0.5" min="1"> × <input id="my" type="number" step="0.5" min="1"></div></div>
       </div>
-      <div id="supNote" class="price-hint" style="margin:-6px 0 12px"></div>
+      <div id="supNote" class="price-hint uo" style="margin:-6px 0 12px"></div>
+      <div class="mabox mo"><label class="f">Medidas medioambientales a aplicar (puede marcar varias)</label><div id="maList"></div>
+        <p class="note" style="margin:8px 0 0">Los técnicos de la cooperativa revisarán la compatibilidad entre medidas en un mismo recinto.</p></div>
       <div class="opts hidden" id="parcial" style="margin-bottom:14px">
         <div class="grid2">
           <div><label class="f" for="supA">Superficie a transformar (ha)</label><input id="supA" type="number" step="0.0001" min="0"></div>
@@ -419,7 +445,7 @@ textarea:focus{border-color:var(--green);outline:none;box-shadow:0 0 0 2px rgba(
       </div>
       <div id="supWarn" class="warn hidden">La superficie a transformar supera la de la finca.</div>
 
-      <div class="acts">
+      <div class="acts uo">
         <div class="act" data-a="acond">
           <span class="chk">✓</span>
           <div><h3 class="at">Acondicionamiento</h3><p>Arranque y preparación del terreno (1.1.4)</p></div>
@@ -458,7 +484,7 @@ textarea:focus{border-color:var(--green);outline:none;box-shadow:0 0 0 2px rgba(
         <div class="price-hint">La mano de obra no es subvencionable. Si la pone la cooperativa, se facturará aparte.</div>
       </div>
 
-      <div class="sumbar"><div><div class="lbl" id="lineLbl">Presupuesto orientativo de esta finca</div><div id="lineDet" class="lbl"></div></div><div class="val" id="lineTot">0,00 €</div></div>
+      <div class="sumbar uo"><div><div class="lbl" id="lineLbl">Presupuesto orientativo de esta finca</div><div id="lineDet" class="lbl"></div></div><div class="val" id="lineTot">0,00 €</div></div>
       <div id="lineErr" class="warn"></div>
       <div class="actions">
         <button class="btn ghost" id="cancelF">Cancelar selección</button>
@@ -467,7 +493,7 @@ textarea:focus{border-color:var(--green);outline:none;box-shadow:0 0 0 2px rgba(
       </div>
     </div>
 
-    <div class="extbox" id="extBox">
+    <div class="extbox uo" id="extBox">
       <div class="exthd">
         <div><h3 style="margin:0 0 2px">¿Hay algo fuera de lo normal en las fincas a transformar?</h3>
         <p class="note" style="margin:0">Por ejemplo: muros o bancales, cabezal de riego, nivelaciones, tuberías de conducción…</p></div>
@@ -485,28 +511,29 @@ textarea:focus{border-color:var(--green);outline:none;box-shadow:0 0 0 2px rgba(
 
     <div class="actions" style="border-top:1px solid var(--line);padding-top:18px">
       <button class="btn ghost" id="back1">Volver</button>
-      <button class="btn pri" id="noMore">No más fincas · Ver presupuesto</button>
+      <button class="btn pri" id="noMore">No más fincas · <span class="uo">Ver presupuesto</span><span class="mo">Ver resumen</span></button>
     </div>
   </section>
 
   <!-- PASO 3 -->
   <section id="s3" class="card hidden">
     <p class="kicker">Paso 4 de 4</p>
-    <h2>Presupuesto orientativo</h2>
+    <h2><span class="uo">Presupuesto orientativo</span><span class="mo">Resumen de medidas medioambientales</span></h2>
     <p class="sub" id="s3sub"></p>
     <div style="overflow:auto">
     <table class="t" id="tRes"></table>
     </div>
-    <div class="totals" id="totals"></div>
-    <div id="finBox" class="check"></div>
+    <div class="totals uo" id="totals"></div>
+    <div class="mes mo">Ejecución prevista: <b class="mesPrev"></b> (mes siguiente a la tramitación). Antes de ejecutar cualquier medida, coordínela con los técnicos de la cooperativa: la fecha de ejecución se comunica previamente a la Administración.</div>
+    <div id="finBox" class="check uo"></div>
     <div style="margin-top:16px"><label class="f" for="obsSol">Observaciones de la solicitud</label>
       <textarea id="obsSol" rows="3" maxlength="1500" placeholder="Cualquier aclaración que quiera trasladar a la cooperativa (accesos, fechas preferentes, situación de la finca…)"></textarea></div>
-    <div id="planBox" style="overflow:auto"></div>
+    <div id="planBox" class="uo" style="overflow:auto"></div>
     <div class="cond">
-      <h3 class="ch">No será subvencionable</h3>
+      <div class="uo"><h3 class="ch">No será subvencionable</h3>
       <ul><li>La retirada de gomas antiguas y de las raíces extraídas con los ganchos.</li>
       <li>La mano de obra de la plantación (realización de hoyos, plantación y riego).</li>
-      <li>El diseño de la nueva plantación.</li></ul>
+      <li>El diseño de la nueva plantación.</li></ul></div>
       <h3 class="ch" style="margin-top:10px">Desistimiento</h3>
       <p style="margin:0" id="desistTxt"></p>
     </div>
@@ -524,7 +551,7 @@ textarea:focus{border-color:var(--green);outline:none;box-shadow:0 0 0 2px rgba(
     <p class="kicker">Solicitud enviada</p>
     <h2 id="okTit">Solicitud registrada</h2>
     <p class="sub" id="okTxt"></p>
-    <div class="actions"><button class="btn ghost" id="dlPdf">Descargar PDF</button><button class="btn pri" id="nueva">Nueva solicitud</button></div>
+    <div class="actions"><button class="btn ghost" id="dlPdf">Descargar PDF</button><button class="btn ghost" id="otra">Otra solicitud para este socio</button><button class="btn pri" id="nueva">Nueva solicitud</button></div>
   </section>
   <div class="foot">San Alfonso Coop. V. · Importes orientativos, IVA no incluido, sujetos a la resolución de la ayuda y a la ejecución real. Precios de referencia <span class="anual"></span>. Sus datos se tratan por la cooperativa para gestionar esta solicitud.</div>
 </main>
@@ -576,6 +603,18 @@ const CFG = {
     {k:'enmienda',    t:'Enmienda orgánica de fondo',                            u:'ha', p:1000},
     {k:'cortavientos',t:'Cortavientos (malla)',                                  u:'m',  p:11},
     {k:'otro',        t:'Otro elemento (descríbalo abajo)',                      u:'',   p:0}
+  ],
+  // Medidas medioambientales (A.i · Mejora o mantenimiento de la calidad del suelo)
+  medidas: [
+    {k:'Ai2',   c:'A.i.2',  t:'Cubiertas inertes en cultivos leñosos'},
+    {k:'Ai4',   c:'A.i.4',  t:'Abonado en verde'},
+    {k:'Ai6',   c:'A.i.6',  t:'Cubiertas vegetales espontáneas o sembradas'},
+    {k:'Ai7',   c:'A.i.7',  t:'Siega e incorporación al terreno de cubiertas vegetales espontáneas'},
+    {k:'Ai8',   c:'A.i.8',  t:'Polímeros y mejorantes del suelo'},
+    {k:'Ai9',   c:'A.i.9',  t:'Ácidos húmicos y fúlvicos'},
+    {k:'Ai10a', c:'A.i.10', t:'Abonos orgánicos'},
+    {k:'Ai10b', c:'A.i.10', t:'Bioestimulantes sin microorganismos'},
+    {k:'Ai10c', c:'A.i.10', t:'Bioestimulantes con microorganismos'}
   ],
   licencias: { "Leanri": {base:"arbol", p:40}, "Tango": {base:"m2", p:2.8} }
 };
@@ -713,8 +752,25 @@ $('#fClr').onclick=()=>{ ['fN','fP','fMin','fMax','fV','fT'].forEach(id=>$('#'+i
 $('#fh').onclick=e=>{ const b=e.target.closest('[data-sort]'); if(!b) return; const k=b.dataset.sort; S.sort = S.sort&&S.sort.k===k ? (S.sort.d>0?{k,d:-1}:null) : {k,d:1}; renderList(); };
 const normTxt = s => String(s??'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');
 $('#q').addEventListener('input',renderList);
+/* ----- modo de solicitud ----- */
+S.modo='unica';
+const mesPrevisto=()=>{ const d=new Date(); const m=new Date(d.getFullYear(), d.getMonth()+1, 1); return m.toLocaleDateString('es-ES',{month:'long',year:'numeric'}); };
+$$('.mesPrev').forEach(e=>e.textContent=mesPrevisto());
+const esMA=()=>S.modo==='ma';
+function setModo(m){
+  if(S.modo!==m){ S.lines=[]; S.cur=null; S.ext={on:'0',it:{},obs:''}; $('#cfg').classList.add('hidden'); }
+  S.modo=m; document.body.classList.toggle('ma',m==='ma');
+}
+function irVia(m){ const e=contactoErr(); if(e){ $('#dniMsg').innerHTML=`<div class="msg err">${e}</div>`; $('#dniMsg').scrollIntoView({behavior:'smooth',block:'center'}); return; }
+  $('#dniMsg').innerHTML=''; setModo(m); step(2); }
+$('#goUnica').onclick=()=>irVia('unica');
+$('#goMA').onclick=()=>irVia('ma');
+const MED=k=>CFG.medidas.find(x=>x.k===k);
+function renderMA(){ const c=S.cur; if(!c) return;
+  $('#maList').innerHTML=CFG.medidas.map(m=>{ const on=c.ma.includes(m.k); return `<div class="mar ${on?'on':''}" data-k="${m.k}" role="checkbox" aria-checked="${on}"><span class="cb">${on?'✓':''}</span><code>${m.c}</code><span>${esc(m.t)}</span></div>`; }).join(''); }
+$('#maList').addEventListener('click',e=>{ const r=e.target.closest('.mar'); if(!r||!S.cur) return; const k=r.dataset.k, i=S.cur.ma.indexOf(k); if(i>=0) S.cur.ma.splice(i,1); else S.cur.ma.push(k); $('#lineErr').textContent=''; renderMA(); });
 const sinSup = i => !(S.socio.f[i][4]>0);
-const blank = () => ({idxs:[], total:'1', croquis:null, sup:null, mx:CFG.marco[0], my:CFG.marco[1], acond:null, riego:null, moR:'', moM:'', var:'', pat:'', on:{acond:false,riego:false,mat:false}, edit:null});
+const blank = () => ({idxs:[], total:'1', croquis:null, sup:null, mx:CFG.marco[0], my:CFG.marco[1], acond:null, riego:null, moR:'', moM:'', ma:[], var:'', pat:'', on:{acond:false,riego:false,mat:false}, edit:null});
 $('#flist').addEventListener('click',e=>{
   const el=e.target.closest('.fi'); if(!el||el.classList.contains('used')) return;
   const i=+el.dataset.i;
@@ -736,7 +792,7 @@ $('#selAll').onclick=()=>{
   if(!S.cur.idxs.length){ closeCfg(); return; } S.cur.sup=null; showCfg(false);
 };
 function closeCfg(){ S.cur=null; $('#cfg').classList.add('hidden'); renderList(); }
-function openLine(l, edit){ S.cur=Object.assign(JSON.parse(JSON.stringify(l)),{idxs:[l.idx],edit}); delete S.cur.idx; showCfg(); }
+function openLine(l, edit){ S.cur=Object.assign(blank(),JSON.parse(JSON.stringify(l)),{idxs:[l.idx],edit}); delete S.cur.idx; showCfg(); }
 function showCfg(scroll=true){
   const c=S.cur, fs=c.idxs.map(i=>S.socio.f[i]), multi=fs.length>1, tot=fs.reduce((a,f)=>a+fha(f),0);
   $('#selName').textContent = multi ? `${fs.length} fincas (mismas actuaciones para todas)` : `finca ${fs[0][0]} · ${fs[0][3]}`;
@@ -752,6 +808,7 @@ function showCfg(scroll=true){
   $$('.seg').forEach(sg=>sg.querySelectorAll('button').forEach(b=>b.classList.toggle('on',c[sg.dataset.k]===b.dataset.v)));
   fillVar(); $('#var').value=c.var; fillPat(); $('#pat').value=c.pat;
   $('#saveF').textContent = c.edit!=null ? 'Guardar cambios' : (multi ? `Guardar ${fs.length} fincas y añadir más` : 'Guardar y añadir otra finca');
+  if(esMA()){ c.ma=c.ma||[]; renderMA(); $('#selName').textContent = multi ? `${fs.length} fincas (mismas medidas para todas)` : `finca ${fs[0][0]} · ${fs[0][3]}`; }
   $('#cfg').classList.remove('hidden'); renderList(); calc();
   if(scroll) $('#cfg').scrollIntoView({behavior:'smooth',block:'start'});
 }
@@ -800,6 +857,7 @@ $('#pat').onchange=()=>{ S.cur.pat=$('#pat').value; calc(); };
 
 /* una línea por finca a partir de la selección actual */
 function curLines(){
+  if(esMA()){ const c=S.cur; return c.idxs.map(i=>({idx:i, tipo:'ma', ma:[...(c.ma||[])], total:'1', croquis:null, sup:+fha(S.socio.f[i]).toFixed(4), mx:0, my:0, on:{acond:false,riego:false,mat:false}})); }
   const c=S.cur, multi=c.idxs.length>1, parc=!multi&&c.total==='0';
   return c.idxs.map(i=>({idx:i, total:parc?'0':'1', croquis:parc?c.croquis:null, sup: parc ? (c.sup||0) : +fha(S.socio.f[i]).toFixed(4), mx:c.mx, my:c.my, acond:c.acond, riego:c.riego, moR:c.moR||'', moM:c.moM||'', var:c.var, pat:c.pat, on:{...c.on}}));
 }
@@ -817,6 +875,7 @@ function lineCost(l){
   r.tot=r.ac+r.ri+r.pl+r.li; return r;
 }
 function lineErrors(l){
+  if(l.tipo==='ma') return l.ma.length?[]:['Marque al menos una medida medioambiental.'];
   const f=S.socio.f[l.idx], e=[];
   if(!(l.sup>0)) e.push('Indique la superficie a transformar.');
   if(l.total==='0'){
@@ -857,8 +916,8 @@ $('#saveF').onclick=()=>{ if(commitLine()) $('#q').focus(); };
 $('#cancelF').onclick=closeCfg;
 function renderChips(){ setTimeout(renderExtras,0);
   $('#chipsHd').classList.toggle('hidden',!S.lines.length);
-  $('#chips').innerHTML = S.lines.map((l,i)=>{const f=S.socio.f[l.idx];return `<div class="chip"><span><b style="text-align:left">${esc(f[0])}</b></span><span class="ad">${esc(f[3])} · ${esc(lineDesc(l))}</span><b>${eur(lineCost(l).tot)}</b><span class="bt"><button data-e="${i}">Editar</button><button class="del" data-d="${i}">Eliminar</button></span></div>`}).join('');
-  $('#addedTot').textContent = S.lines.length ? `${S.lines.length} finca${S.lines.length>1?'s':''} · ${eur(S.lines.reduce((a,l)=>a+lineCost(l).tot,0))}` : '';
+  $('#chips').innerHTML = S.lines.map((l,i)=>{const f=S.socio.f[l.idx];return `<div class="chip"><span><b style="text-align:left">${esc(f[0])}</b></span><span class="ad">${esc(f[3])} · ${esc(lineDesc(l))}</span><b>${l.tipo==='ma'?l.ma.length+' medida'+(l.ma.length>1?'s':''):eur(lineCost(l).tot)}</b><span class="bt"><button data-e="${i}">Editar</button><button class="del" data-d="${i}">Eliminar</button></span></div>`}).join('');
+  $('#addedTot').textContent = S.lines.length ? `${S.lines.length} finca${S.lines.length>1?'s':''}${esMA()?' · '+num(S.lines.reduce((a,l)=>a+l.sup,0),4)+' ha':' · '+eur(S.lines.reduce((a,l)=>a+lineCost(l).tot,0))}` : '';
 }
 $('#chips').onclick=e=>{
   const b=e.target.closest('button'); if(!b) return;
@@ -941,17 +1000,27 @@ function totals(){
 }
 const MO={'propia':'propia del socio','coop':'de la cooperativa'};
 function lineDesc(l){
+  if(l.tipo==='ma') return l.ma.map(k=>MED(k).c+' '+MED(k).t).join(' · ');
   const a=[]; if(l.total==='0') a.push('Parcial del recinto (croquis)'); if(l.on.acond) a.push(CFG.acond[l.acond].t); if(l.on.riego) a.push(CFG.riego[l.riego].t+(l.moR?` (M.O. ${MO[l.moR]})`:''));
   if(l.on.mat) a.push(`${l.var} / ${l.pat==='Planchas'?'sobreinjerto':l.pat} (${num(l.mx,1)}×${num(l.my,1)})`+(l.moM?` (M.O. ${MO[l.moM]})`:'')); return a.join(' · ');
 }
 function lineDescP(l){
+  if(l.tipo==='ma') return l.ma.map(k=>`<b>${MED(k).c}</b> ${esc(MED(k).t)}`).join('<br>');
   const a=[]; if(l.total==='0') a.push('<b>Actuación parcial del recinto</b><span class="up">Croquis adjunto: '+esc(l.croquis?l.croquis.name:'')+'</span>');
   if(l.on.acond){ const p=up(CFG.acond[l.acond].p); a.push(`${CFG.acond[l.acond].t}<span class="up">${eur(p)}/ha</span>`); }
   if(l.on.riego){ const p=up(CFG.riego[l.riego].p); a.push(`${CFG.riego[l.riego].t}<span class="up">${eur(p)}/ha · Mano de obra ${MO[l.moR]||'—'}</span>`); }
   if(l.on.mat){ const lic=CFG.licencias[l.var]; a.push(`${esc(l.var)} / ${l.pat==='Planchas'?'sobreinjerto':esc(l.pat)} (${num(l.mx,1)}×${num(l.my,1)})<span class="up">${eur(up(CFG.plantones[l.var][l.pat]))}/ud${lic?` + licencia ${eur(up(lic.p))}/${lic.base==='arbol'?'árbol':'m²'}`:''} · Mano de obra ${MO[l.moM]||'—'}</span>`); }
   return a.join('<br>');
 }
+function renderResMA(){
+  $('#s3sub').textContent=`${S.socio.n} · Socio/a de ${entidad()} · Nº ${S.socio.c} · ${S.lines.length} finca${S.lines.length>1?'s':''}`;
+  $('#tRes').innerHTML=`<thead><tr><th>Finca</th><th>Situación</th><th>Medidas medioambientales</th><th class="r">Sup. (ha)</th></tr></thead>
+  <tbody>${S.lines.map((l,i)=>{const f=S.socio.f[l.idx];return `<tr><td style="min-width:150px"><b>${esc(f[0])}</b> · ${esc(f[3])}<br><button class="lnk" data-del="${i}">Eliminar finca</button></td><td>${esc(f[1])}<br><span class="note">${f[6]?'Partida '+esc(f[6])+' · ':''}${sig(f)}</span></td><td>${lineDescP(l)}</td><td class="r">${num(l.sup,4)}</td></tr>`}).join('')}</tbody>
+  <tfoot><tr><td colspan="3">Total</td><td class="r">${num(S.lines.reduce((a,l)=>a+l.sup,0),4)}</td></tr></tfoot>`;
+  $('#desistTxt').textContent=`En caso de desistir de la ejecución de la acción solicitada se facturarán los pagos a cuenta que la cooperativa haya tenido que realizar y el ${num(CFG.gastosDesistimiento*100)} % del valor de la acción renunciada en concepto de gastos de gestión, con cargo a los gastos generales del Fondo Operativo del año en curso.`;
+}
 function renderRes(){
+  if(esMA()) return renderResMA();
   const finWas=$('#fin')?.checked;
   const {rs,T}=totals();
   $('#s3sub').textContent=`${S.socio.n} · Socio/a de ${entidad()} · Nº ${S.socio.c} · ${S.lines.length} finca${S.lines.length>1?'s':''}`;
@@ -985,6 +1054,18 @@ $('#acepto').onchange=e=>$('#pdf').disabled=!e.target.checked;
 /* ---------- PDF ---------- */
 function payload(){
   const P=payload0(); P.observaciones=$('#obsSol').value.trim();
+  if(esMA()){
+    P.tipo='Medidas medioambientales · '+P.tipo; P.ejecucionPrevista=mesPrevisto();
+    P.fincas=S.lines.map(l=>{const f=S.socio.f[l.idx]; return {finca:f[0],termino:f[1],sigpac:f[2],variedadActual:f[3],sup:l.sup,supRecinto:+fha(f).toFixed(4),recinto:'100 %',partida:f[6]||'',
+      acondicionamiento:'MEDIDAS MEDIOAMBIENTALES: '+l.ma.map(k=>MED(k).c+' '+MED(k).t).join('; ')+' · Ejecución prevista: '+mesPrevisto(),
+      riego:'',variedadNueva:'',patron:'',marco:'',arboles:'',croquis:null,eurAcond:0,eurRiego:0,eurMaterial:0,eurTotal:0};});
+    P.medidas=S.lines.map(l=>({finca:S.socio.f[l.idx][0], sup:l.sup, medidas:l.ma.map(k=>MED(k).c+' '+MED(k).t)}));
+    P.elementos=[]; P.inversion=0; P.ayuda=0; P.aportacion=0; P.financiacion='NO'; P.intereses=0; P.cuotas=[];
+    P.acondicionamientoTotal=0; P.riegoTotal=0; P.materialTotal=0;
+    if(P.observaciones) P.fincas.push({finca:'Observaciones', termino:'', sigpac:'', variedadActual:'', sup:'', supRecinto:'', recinto:'Observaciones de la solicitud', partida:'',
+      acondicionamiento:P.observaciones, riego:'', variedadNueva:'', patron:'', marco:'', arboles:'', croquis:null, eurAcond:0, eurRiego:0, eurMaterial:0, eurTotal:0});
+    return P;
+  }
   extRows().forEach(x=>P.fincas.push({finca:x.fin, termino:'', sigpac:'', variedadActual:'', sup:'', supRecinto:'', recinto:'Elemento especial', partida:'',
     acondicionamiento: x.e.t + (x.e.u?` (${String(x.q).replace('.',',')} ${x.e.u} × ${String(x.e.p).replace('.',',')} €/${x.e.u})`:' (a valorar)') + (x.e.k==='otro'&&S.ext.obs.trim()?': '+S.ext.obs.trim():''),
     riego:'', variedadNueva:'', patron:'', marco:'', arboles:'', croquis:null, eurAcond:0, eurRiego:0, eurMaterial:0, eurTotal:+x.imp.toFixed(2)}));
@@ -1005,7 +1086,27 @@ function payload0(){
     acondicionamientoTotal:+T.ac.toFixed(2), riegoTotal:+T.ri.toFixed(2), materialTotal:+(T.pl+T.li).toFixed(2), cuotas:T.fin?T.plan.map(p=>+p.cuota.toFixed(2)):[],
     inversion:+T.tot.toFixed(2), ayuda:+T.sub.toFixed(2), aportacion:+T.apo.toFixed(2), financiacion:T.fin?'SI':'NO', intereses:+T.int.toFixed(2) };
 }
+function docHTMLMA(){
+  const fecha=$('#fecha').value? new Date($('#fecha').value).toLocaleDateString('es-ES'):'';
+  const obs=$('#obsSol').value.trim();
+  return `
+  <div class="hd"><div><img src="${CFG.logo}" style="height:52px;margin-bottom:4px"><br><small style="letter-spacing:1px;text-transform:uppercase;font-weight:700;color:#1f5a43">${esc(CFG.cooperativa)} · CIF ${esc(CFG.cif)}</small><h1>Solicitud de medidas medioambientales</h1><small>Programa Operativo · Anualidad ${CFG.anualidad} · A.i Mejora o mantenimiento de la calidad del suelo</small></div><div><b>${esc($('#tipo').value)}</b><br><small>Fecha: ${fecha}</small></div></div>
+  <div class="box"><div class="row">
+    <div><span>Nombre / razón social</span><b>${esc(S.socio.n)}</b></div>
+    <div><span>DNI / NIF</span>${esc(S.dni)}</div><div><span>Nº socio</span>${esc(S.socio.c)}</div><div><span>Entidad</span><b>${esc(entidad())}</b>${entidad()!=='San Alfonso'&&CFG.logos[entidad()]?`<br><img src="${CFG.logos[entidad()]}" style="height:26px;margin-top:3px">`:''}</div>
+    <div><span>Domicilio</span>${esc($('#dom').value)||'—'}</div><div><span>Teléfono</span>${esc($('#tel').value)||'—'}</div><div><span>Correo electrónico</span>${esc($('#mail').value)||'—'}</div>
+  </div></div>
+  <table><thead><tr><th>Nº finca</th><th>Término / SIGPAC</th><th>Variedad</th><th>Medidas medioambientales solicitadas</th><th class="r">Sup. (ha)</th></tr></thead>
+  <tbody>${S.lines.map(l=>{const f=S.socio.f[l.idx];return `<tr><td>${esc(f[0])}</td><td>${esc(f[1])}<br>${f[6]?esc(f[6])+' · ':''}${sig(f)}</td><td>${esc(f[3])}</td><td>${lineDescP(l)}</td><td class="r">${num(l.sup,4)}</td></tr>`}).join('')}</tbody>
+  <tfoot><tr><td colspan="4">TOTAL</td><td class="r">${num(S.lines.reduce((a,l)=>a+l.sup,0),4)}</td></tr></tfoot></table>
+  <div class="box"><b>Ejecución prevista: ${mesPrevisto()}</b> (mes siguiente a la tramitación de la solicitud). Antes de ejecutar cualquier medida, el socio la coordinará con los técnicos de la cooperativa, que comunicarán previamente la fecha de ejecución a la Administración.</div>
+  <div class="legal">${obs?`<h4>Observaciones del socio</h4>${esc(obs)}`:''}
+    <h4>Desistimiento</h4>${esc($('#desistTxt').textContent)}</div>
+  <div class="sig"><div>Firma del socio/a</div><div>Recibido por ${esc(CFG.cooperativa)} (firma y sello)</div></div>
+  <div class="disc">La concesión queda sujeta a la resolución de la ayuda y a la comprobación de las medidas por los técnicos de la cooperativa.</div>`;
+}
 function docHTML(){
+  if(esMA()) return docHTMLMA();
   const {rs,T}=totals(); const fecha=$('#fecha').value? new Date($('#fecha').value).toLocaleDateString('es-ES'):'';
   return `
   <div class="hd"><div>${CFG.logo?`<img src="${CFG.logo}" style="height:52px;margin-bottom:4px"><br>`:''}<small style="letter-spacing:1px;text-transform:uppercase;font-weight:700;color:#1f5a43">${esc(CFG.cooperativa)} · CIF ${esc(CFG.cif)}</small><h1>Solicitud de ayudas para transformación varietal e inversiones individuales</h1><small>Programa Operativo · Anualidad ${CFG.anualidad}</small></div><div><b>${esc($('#tipo').value)}</b><br><small>Fecha: ${fecha}</small></div></div>
@@ -1064,6 +1165,7 @@ $('#dlPdf').onclick=()=>{
   const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([u],{type:'application/pdf'})); a.download=`Solicitud_${S.id}_${S.dni}.pdf`;
   document.body.appendChild(a); a.click(); a.remove();
 };
+$('#otra').onclick=()=>{ S.enviada=false; S.lines=[]; S.cur=null; S.ext={on:'0',it:{},obs:''}; S.pdf=null; $('#obsSol').value=''; $('#acepto').checked=false; $('#pdf').disabled=true; $('#pdf').textContent='Finalizar y enviar solicitud'; $('#envMsg').innerHTML=''; $('#cfg').classList.add('hidden'); step(1); window.scrollTo({top:0}); };
 $('#nueva').onclick=()=>{ window.location.reload(); };
 
 window.addEventListener('beforeunload',e=>{ if(!S.enviada && (S.lines.length || S.cur)){ e.preventDefault(); e.returnValue=''; } });
@@ -1162,6 +1264,10 @@ const FAQ = [
   a:'Solo necesita su <b>DNI/NIF</b>. Con él se cargan sus datos de socio y sus fincas registradas. Si va a transformar solo una parte de un recinto, tenga a mano un <b>croquis</b> (foto o PDF) marcando esa zona.'},
  {q:'¿Hasta cuándo puedo presentar la solicitud?', k:['plazo','hasta cuando','fecha','cuando','limite','cierra','termina','ultimo dia','mayo'],
   a:'El plazo está abierto desde la recepción de la circular hasta el <b>31 de mayo</b>.'},
+ {q:'¿Qué son las medidas medioambientales?', k:['medioambiental','medioambientales','cubierta','cubiertas','abonado en verde','siega','bioestimulante','bioestimulantes','abono organico','acidos humicos','fulvicos','polimeros','mejorantes','suelo'],
+  a:'Son medidas de mejora o mantenimiento de la calidad del suelo (A.i): cubiertas inertes, abonado en verde, cubiertas vegetales, siega e incorporación de cubiertas, polímeros y mejorantes, ácidos húmicos y fúlvicos, abonos orgánicos y bioestimulantes (con o sin microorganismos). Tras poner su DNI, pulse <b>MEDIDAS MEDIOAMBIENTALES</b>, marque las fincas y las medidas. La actuación está prevista para el <b>mes siguiente a la tramitación</b>; antes de ejecutarla, coordínela con los técnicos.'},
+ {q:'¿Puedo pedir la solicitud única y las medidas medioambientales?', k:['las dos','ambas','tambien','otra solicitud','solicitud unica y','dos solicitudes'],
+  a:'Sí. Son dos solicitudes distintas. Al enviar la primera, pulse <b>Otra solicitud para este socio</b> y elija la otra opción; sus datos se mantienen.'},
  {q:'¿Qué actuaciones puedo solicitar?', k:['actuaciones','que puedo pedir','subvencionan','que incluye','inversiones','tipos'],
   a:'Tres actuaciones, que puede combinar en cada finca:<ul><li><b>Acondicionamiento</b> (1.1.4): con arranque del arbolado o solo preparación del terreno.</li><li><b>Riego</b> (1.1.1): cambio de riego completo o cambio de gomas.</li><li><b>Material vegetal</b> (1.2.3): plantones o sobreinjerto de la nueva variedad.</li></ul>'},
  {q:'¿Cuánto me subvencionan?', k:['cuanto','ayuda','subvencion','porcentaje','50','pagar','aportacion','coste'],
@@ -1207,7 +1313,7 @@ const FAQ = [
  {q:'¿Cómo se tratan mis datos?', k:['privacidad','datos personales','proteccion de datos','rgpd','seguridad'],
   a:'Sus datos los trata la cooperativa únicamente para gestionar esta solicitud de ayudas.'}
 ];
-const START = ['¿Qué necesito para hacer la solicitud?','¿Hasta cuándo puedo presentar la solicitud?','¿Cuánto me subvencionan?','¿Cómo funciona la financiación?','¿Qué diferencia hay entre riego completo y cambio de gomas?','¿Qué es el croquis y cuándo lo necesito?','¿Puedo marcar varias fincas a la vez?'];
+const START = ['¿Qué necesito para hacer la solicitud?','¿Qué son las medidas medioambientales?','¿Hasta cuándo puedo presentar la solicitud?','¿Cuánto me subvencionan?','¿Cómo funciona la financiación?','¿Qué diferencia hay entre riego completo y cambio de gomas?','¿Qué es el croquis y cuándo lo necesito?','¿Puedo marcar varias fincas a la vez?'];
 const log=$b('#botLog');
 function add(html,who){ const d=document.createElement('div'); d.className='bm '+who; d.innerHTML=html; log.appendChild(d); log.scrollTop=log.scrollHeight; }
 function sugs(list){ const w=document.createElement('div'); w.className='bot-sug'; list.forEach(q=>{ const b=document.createElement('button'); b.type='button'; b.textContent=q; b.onclick=()=>ask(q); w.appendChild(b); }); log.appendChild(w); log.scrollTop=log.scrollHeight; }
