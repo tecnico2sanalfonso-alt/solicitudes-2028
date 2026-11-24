@@ -250,6 +250,8 @@ textarea:focus{border-color:var(--green);outline:none;box-shadow:0 0 0 2px rgba(
 .mes{border-left:3px solid var(--green);background:var(--green-soft);padding:12px 14px;border-radius:3px;font-size:14px;margin:14px 0}
 .mes b{color:var(--green)}
 body.ma .uo, body:not(.ma) .mo{display:none!important}
+.act.blk,.mar.blk{opacity:.5;cursor:not-allowed}
+.act.blk .chk,.mar.blk .cb{border-color:#b9c2bd}
 .lnk{border:0;background:none;padding:0;margin-top:4px;color:var(--red);font-size:12px;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .up{display:block;color:var(--muted);font-size:12px}
 .foot{color:var(--muted);font-size:11.5px;text-align:center;padding:8px 0 26px}
@@ -442,6 +444,7 @@ body.ma .uo, body:not(.ma) .mo{display:none!important}
         <div class="uo"><label class="f">Marco de plantación (m)</label>
           <div style="display:flex;gap:8px;align-items:center"><input id="mx" type="number" step="0.5" min="1"> × <input id="my" type="number" step="0.5" min="1"></div></div>
       </div>
+      <div id="blkNote" class="msg err hidden" style="margin:0 0 12px"></div>
       <div id="supNote" class="price-hint uo" style="margin:-6px 0 12px"></div>
       <div class="mabox mo"><label class="f">Medidas medioambientales a aplicar (puede marcar varias)</label><div id="maList"></div>
         <p class="note" style="margin:8px 0 0">Los técnicos de la cooperativa revisarán la compatibilidad entre medidas en un mismo recinto.</p></div>
@@ -547,8 +550,12 @@ body.ma .uo, body:not(.ma) .mo{display:none!important}
       <li>El diseño de la nueva plantación.</li></ul></div>
       <h3 class="ch" style="margin-top:10px">Desistimiento</h3>
       <p style="margin:0" id="desistTxt"></p>
+      <h3 class="ch" style="margin-top:10px">Responsabilidad</h3>
+      <p style="margin:0">Si la Conselleria formulara reparos o impusiera reducciones, penalizaciones o sanciones derivadas de los datos declarados o de la ejecución de las actuaciones de esta solicitud, su importe será responsabilidad de la persona que la ha tramitado, que lo asume expresamente.</p>
+      <h3 class="ch" style="margin-top:10px">Una solicitud por actuación y año</h3>
+      <p style="margin:0">Cada recinto solo puede solicitarse una vez por actuación dentro del mismo año natural.</p>
     </div>
-    <label class="check"><input type="checkbox" id="acepto"><span>He leído las condiciones y confirmo que los datos son correctos.</span></label>
+    <label class="check"><input type="checkbox" id="acepto"><span>He leído las condiciones, confirmo que los datos son correctos y asumo la responsabilidad indicada.</span></label>
     <div class="actions">
       <button class="btn ghost" id="back2">Volver a fincas</button>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -681,7 +688,7 @@ async function buscar(){
   finally{ $('#bDni').disabled=false; $('#bDni').textContent='Buscar'; }
   if(!s){ m.innerHTML='<div class="msg err">No encontramos ese DNI/NIF entre los socios con fincas registradas. Compruébelo o contacte con la oficina de la cooperativa.</div>'; $('#s1b').classList.add('hidden'); return; }
   if(S.dni!==d){ S.lines=[]; S.cur=null; S.ext={on:'0',it:{},obs:''}; S.socio=s; fillFilters(); }
-  S.dni=d; S.socio=s; m.innerHTML='';
+  S.dni=d; S.socio=s; S.usados=s.usados||{}; m.innerHTML='';
   $('#nom').textContent=s.n; $('#ncod').textContent=s.c; $('#nrec').textContent=s.f.length;
   $('#nsup').textContent=num(s.f.reduce((a,f)=>a+f[4],0)/10000,4)+' ha';
   $('#s1b').classList.remove('hidden'); $('#back0b').classList.add('hidden');
@@ -743,7 +750,7 @@ function renderList(){
     <div class="fi ${sel.has(i)?'sel':''} ${used.has(i)?'used':''}" data-i="${i}">
       <span class="cb">${used.has(i)||sel.has(i)?'✓':''}</span>
       <div class="n">${esc(f[0])}</div>
-      <div class="v">${esc(f[3])}${f[5]?'<span class="tag">Improductiva</span>':''}${f[4]>0?'':'<span class="tag">Sin superficie registrada</span>'}${used.has(i)?'<span class="tag ok">Incluida</span>':''}</div>
+      <div class="v">${esc(f[3])}${f[5]?'<span class="tag">Improductiva</span>':''}${f[4]>0?'':'<span class="tag">Sin superficie registrada</span>'}${used.has(i)?'<span class="tag ok">Incluida</span>':''}${usadosFinca(i).length?` <span class="tag" title="Ya solicitado en ${ANYO}">Ya solicitado ${ANYO}: ${usadosFinca(i).map(nomClave).map(esc).join(', ')}</span>`:''}</div>
       <div class="p">${esc(f[1])}<small style="display:block;color:var(--muted);font-size:12px">${f[6]?'Partida '+esc(f[6])+' · ':''}${sig(f)}</small></div>
       <div class="s">${num(fha(f),4)} ha<small>${num(f[4])} m²</small></div>
     </div>`).join('') : '<div class="empty">No hay fincas que coincidan con la búsqueda.</div>');
@@ -777,9 +784,33 @@ function irVia(m){ const e=contactoErr(); if(e){ $('#dniMsg').innerHTML=`<div cl
 $('#goUnica').onclick=()=>irVia('unica');
 $('#goMA').onclick=()=>irVia('ma');
 const MED=k=>CFG.medidas.find(x=>x.k===k);
-function renderMA(){ const c=S.cur; if(!c) return;
+function renderMA(){ const c=S.cur; if(!c) return; setTimeout(avisoBloq,0);
   $('#maList').innerHTML=CFG.medidas.map(m=>{ const on=c.ma.includes(m.k); return `<div class="mar ${on?'on':''}" data-k="${m.k}" role="checkbox" aria-checked="${on}"><span class="cb">${on?'✓':''}</span><code>${m.c}</code><span>${esc(m.t)}</span></div>`; }).join(''); }
-$('#maList').addEventListener('click',e=>{ const r=e.target.closest('.mar'); if(!r||!S.cur) return; const k=r.dataset.k, i=S.cur.ma.indexOf(k); if(i>=0) S.cur.ma.splice(i,1); else S.cur.ma.push(k); $('#lineErr').textContent=''; renderMA(); });
+$('#maList').addEventListener('click',e=>{ const r=e.target.closest('.mar'); if(!r||!S.cur) return; const k=r.dataset.k, i=S.cur.ma.indexOf(k); if(i<0 && r.classList.contains('blk')){ $('#lineErr').textContent='Esta medida ya está solicitada este año en alguna de las fincas marcadas.'; return; } if(i>=0) S.cur.ma.splice(i,1); else S.cur.ma.push(k); $('#lineErr').textContent=''; renderMA(); });
+/* ----- una actuación por recinto y año natural ----- */
+const ANYO=new Date().getFullYear();
+const NOMC={'A.1.4':'acondicionamiento','A.1.1':'riego','A.2.3':'material vegetal'};
+const nomClave=k=>NOMC[k]||(MED(k)?MED(k).c+' '+MED(k).t.toLowerCase():k);
+const esModif=()=>/Modificaci/.test($('#tipo').value);
+function usadoRaw(idx,k){ const u=(S.usados||{})[S.socio.f[idx][2]]; return (u&&u[k])||null; }
+/* bloquea si la pidió otra persona; si la pidió el mismo socio solo avisa (podrá enviarla como Modificación) */
+function usado(idx,k){ const x=usadoRaw(idx,k); return x&&!x.mismo?x:null; }
+function propias(idx){ const u=(S.usados||{})[S.socio.f[idx][2]]||{}; return Object.keys(u).filter(k=>u[k].mismo); }
+function usadosFinca(idx){ const u=(S.usados||{})[S.socio.f[idx][2]]||{}; return Object.keys(u); }
+function choquesPropios(){ const o=[]; (S.lines||[]).forEach(l=>clavesL(l).forEach(k=>{ const x=usadoRaw(l.idx,k); if(x&&x.mismo) o.push(`finca ${S.socio.f[l.idx][0]} (${nomClave(k)}, solicitud ${x.id})`); })); return o; }
+function clavesL(l){ if(l.tipo==='ma') return [...l.ma]; const k=[]; if(l.on.acond) k.push('A.1.4'); if(l.on.riego) k.push('A.1.1'); if(l.on.mat) k.push('A.2.3'); return k; }
+function bloqueadas(){ if(!S.cur) return {}; const b={}; S.cur.idxs.forEach(i=>usadosFinca(i).filter(k=>usado(i,k)).forEach(k=>{ (b[k]=b[k]||[]).push(S.socio.f[i][0]); })); return b; }
+function avisoBloq(){
+  const b=bloqueadas(), ks=Object.keys(b); const el=$('#blkNote');
+  const pr={}; if(S.cur) S.cur.idxs.forEach(i=>propias(i).forEach(k=>{ (pr[k]=pr[k]||[]).push(S.socio.f[i][0]+' ('+usadoRaw(i,k).id+')'); })); const kp=Object.keys(pr);
+  let h='';
+  if(ks.length) h+='<b>Ya solicitado este año ('+ANYO+') por otra persona:</b> '+ks.map(k=>`${esc(nomClave(k))} en ${b[k].map(esc).join(', ')}`).join(' · ')+'. No se puede volver a pedir dentro del mismo año natural.';
+  if(kp.length) h+=(h?'<br>':'')+'<b>Usted ya solicitó este año:</b> '+kp.map(k=>`${esc(nomClave(k))} en ${pr[k].map(esc).join(', ')}`).join(' · ')+'. Solo puede volver a incluirlo para cambiarlo, eligiendo «Modificación de la solicitud inicial» en Tipo de solicitud (pantalla de sus datos).';
+  el.innerHTML=h; el.classList.toggle('hidden',!h);
+  const map={acond:'A.1.4',riego:'A.1.1',mat:'A.2.3'};
+  $$('.act').forEach(a=>a.classList.toggle('blk',!!b[map[a.dataset.a]]));
+  $$('#maList .mar').forEach(r=>r.classList.toggle('blk',!!b[r.dataset.k]));
+}
 const sinSup = i => !(S.socio.f[i][4]>0);
 const blank = () => ({idxs:[], total:'1', croquis:null, sup:null, mx:CFG.marco[0], my:CFG.marco[1], acond:null, riego:null, moR:'', moM:'', ma:[], var:'', pat:'', on:{acond:false,riego:false,mat:false}, edit:null});
 $('#flist').addEventListener('click',e=>{
@@ -820,10 +851,11 @@ function showCfg(scroll=true){
   fillVar(); $('#var').value=c.var; fillPat(); $('#pat').value=c.pat;
   $('#saveF').textContent = c.edit!=null ? 'Guardar cambios' : (multi ? `Guardar ${fs.length} fincas y añadir más` : 'Guardar y añadir otra finca');
   if(esMA()){ c.ma=c.ma||[]; renderMA(); $('#selName').textContent = multi ? `${fs.length} fincas (mismas medidas para todas)` : `finca ${fs[0][0]} · ${fs[0][3]}`; }
-  $('#cfg').classList.remove('hidden'); renderList(); calc();
+  $('#cfg').classList.remove('hidden'); renderList(); calc(); avisoBloq();
   if(scroll) $('#cfg').scrollIntoView({behavior:'smooth',block:'start'});
 }
 $$('.act').forEach(a=>a.onclick=()=>{
+  if(!S.cur.on[a.dataset.a] && a.classList.contains('blk')){ $('#lineErr').textContent='Esta actuación ya está solicitada este año en alguna de las fincas marcadas.'; return; }
   const k=a.dataset.a; S.cur.on[k]=!S.cur.on[k]; a.classList.toggle('on',S.cur.on[k]);
   $('#o-'+k).classList.toggle('hidden',!S.cur.on[k]);
   if(S.cur.on[k] && k!=='mat' && !S.cur[k]){ S.cur[k] = k==='acond'?'con':'completo'; $(`.seg[data-k=${k}] button[data-v=${S.cur[k]}]`).classList.add('on'); }
@@ -886,6 +918,8 @@ function lineCost(l){
   r.tot=r.ac+r.ri+r.pl+r.li; return r;
 }
 function lineErrors(l){
+  { const dup=clavesL(l).map(k=>[k,usado(l.idx,k)]).filter(x=>x[1]);
+    if(dup.length) return dup.map(([k,u])=>`La finca ${S.socio.f[l.idx][0]} ya tiene solicitado este año ${nomClave(k)} (solicitud ${u.id}); solo se puede pedir una vez por año natural.`); }
   if(l.tipo==='ma') return l.ma.length?[]:['Marque al menos una medida medioambiental.'];
   const f=S.socio.f[l.idx], e=[];
   if(!(l.sup>0)) e.push('Indique la superficie a transformar.');
@@ -1067,7 +1101,7 @@ function payload(){
   const P=payload0(); P.observaciones=$('#obsSol').value.trim();
   if(esMA()){
     P.tipo='Medidas medioambientales · '+P.tipo; P.ejecucionPrevista=mesPrevisto();
-    P.fincas=S.lines.map(l=>{const f=S.socio.f[l.idx]; return {finca:f[0],termino:f[1],sigpac:f[2],variedadActual:f[3],sup:l.sup,supRecinto:+fha(f).toFixed(4),recinto:'100 %',partida:f[6]||'',
+    P.fincas=S.lines.map(l=>{const f=S.socio.f[l.idx]; return {finca:f[0],termino:f[1],sigpac:f[2],variedadActual:f[3],sup:l.sup,supRecinto:+fha(f).toFixed(4),recinto:'100 %',claves:l.ma.join('|'),partida:f[6]||'',
       acondicionamiento:'MEDIDAS MEDIOAMBIENTALES: '+l.ma.map(k=>MED(k).c+' '+MED(k).t).join('; ')+' · Ejecución prevista: '+mesPrevisto(),
       riego:'',variedadNueva:'',patron:'',marco:'',arboles:'',croquis:null,eurAcond:0,eurRiego:0,eurMaterial:0,eurTotal:0};});
     P.medidas=S.lines.map(l=>({finca:S.socio.f[l.idx][0], sup:l.sup, medidas:l.ma.map(k=>MED(k).c+' '+MED(k).t)}));
@@ -1092,7 +1126,7 @@ function payload0(){
     telefono:$('#tel').value, email:$('#mail').value, domicilio:$('#dom').value, contactoActualizado:contactoCambiado().join(', '), tipo:$('#tipo').value, fecha:$('#fecha').value,
     fincas:S.lines.map((l,i)=>{const f=S.socio.f[l.idx],r=rs[i];return {finca:f[0],termino:f[1],sigpac:f[2],variedadActual:f[3],sup:+r.sup.toFixed(4),
       acondicionamiento:l.on.acond?CFG.acond[l.acond].t:'',riego:l.on.riego?CFG.riego[l.riego].t+(l.moR?` · M.O. ${MO[l.moR]}`:''):'',variedadNueva:l.on.mat?l.var+(l.moM?` · M.O. ${MO[l.moM]}`:''):'',manoObraRiego:l.on.riego?l.moR:'',manoObraPlantacion:l.on.mat?l.moM:'',patron:l.on.mat?l.pat:'',
-      marco:l.on.mat?`${l.mx}x${l.my}`:'',arboles:r.arb, recinto:l.total==='0'?'Parcial':'100 %', supRecinto:+fha(f).toFixed(4), croquis:l.total==='0'&&l.croquis?{name:l.croquis.name,type:l.croquis.type,data:l.croquis.data}:null, partida:f[6]||'',eurAcond:+r.ac.toFixed(2),eurRiego:+r.ri.toFixed(2),eurMaterial:+(r.pl+r.li).toFixed(2),eurTotal:+r.tot.toFixed(2)}}),
+      marco:l.on.mat?`${l.mx}x${l.my}`:'',arboles:r.arb, recinto:l.total==='0'?'Parcial':'100 %', claves:clavesL(l).join('|'), supRecinto:+fha(f).toFixed(4), croquis:l.total==='0'&&l.croquis?{name:l.croquis.name,type:l.croquis.type,data:l.croquis.data}:null, partida:f[6]||'',eurAcond:+r.ac.toFixed(2),eurRiego:+r.ri.toFixed(2),eurMaterial:+(r.pl+r.li).toFixed(2),eurTotal:+r.tot.toFixed(2)}}),
     elementos: extRows().map(x=>({elemento:x.e.t, cantidad:x.q, unidad:x.e.u, precio:x.e.p, finca:x.fin, importe:+x.imp.toFixed(2)})), observacionesElementos:S.ext.obs.trim(),
     acondicionamientoTotal:+T.ac.toFixed(2), riegoTotal:+T.ri.toFixed(2), materialTotal:+(T.pl+T.li).toFixed(2), cuotas:T.fin?T.plan.map(p=>+p.cuota.toFixed(2)):[],
     inversion:+T.tot.toFixed(2), ayuda:+T.sub.toFixed(2), aportacion:+T.apo.toFixed(2), financiacion:T.fin?'SI':'NO', intereses:+T.int.toFixed(2) };
@@ -1112,7 +1146,9 @@ function docHTMLMA(){
   <tfoot><tr><td colspan="4">TOTAL</td><td class="r">${num(S.lines.reduce((a,l)=>a+l.sup,0),4)}</td></tr></tfoot></table>
   <div class="box"><b>Ejecución prevista: ${mesPrevisto()}</b> (mes siguiente a la tramitación de la solicitud). Antes de ejecutar cualquier medida, el socio la coordinará con los técnicos de la cooperativa, que comunicarán previamente la fecha de ejecución a la Administración.</div>
   <div class="legal">${obs?`<h4>Observaciones del socio</h4>${esc(obs)}`:''}
-    <h4>Desistimiento</h4>${esc($('#desistTxt').textContent)}</div>
+    <h4>Desistimiento</h4>${esc($('#desistTxt').textContent)}
+    <h4>Responsabilidad</h4>Si la Conselleria formulara reparos o impusiera reducciones, penalizaciones o sanciones derivadas de los datos declarados o de la ejecución de las actuaciones de esta solicitud, su importe será responsabilidad de la persona que la ha tramitado, que lo asume expresamente.
+    <h4>Una solicitud por actuación y año</h4>Cada recinto solo puede solicitarse una vez por actuación dentro del mismo año natural.</div>
   <div class="sig"><div>Firma del socio/a</div><div>Recibido por ${esc(CFG.cooperativa)} (firma y sello)</div></div>
   <div class="disc">La concesión queda sujeta a la resolución de la ayuda y a la comprobación de las medidas por los técnicos de la cooperativa.</div>`;
 }
@@ -1142,6 +1178,8 @@ function docHTML(){
     ${$('#obsSol').value.trim()?`<h4>Observaciones del socio</h4>${esc($('#obsSol').value.trim())}`:''}
     <h3 class="ch">No será subvencionable</h3>a) La retirada de gomas antiguas y de las raíces extraídas con los ganchos. b) La mano de obra de la plantación (realización de hoyos, plantación y riego). c) El diseño de la nueva plantación.
     <h4>Desistimiento</h4>${esc($('#desistTxt').textContent)}
+    <h4>Responsabilidad</h4>Si la Conselleria formulara reparos o impusiera reducciones, penalizaciones o sanciones derivadas de los datos declarados o de la ejecución de las actuaciones de esta solicitud, su importe será responsabilidad de la persona que la ha tramitado, que lo asume expresamente.
+    <h4>Una solicitud por actuación y año</h4>Cada recinto solo puede solicitarse una vez por actuación dentro del mismo año natural.
   </div>
   <div class="sig"><div>Firma del socio/a</div><div>Recibido por ${esc(CFG.cooperativa)} (firma y sello)</div></div>
   <div class="disc">Todos los valores de presupuesto son orientativos, con IVA no incluido, y quedan sujetos a la resolución de la ayuda y a la ejecución real. Precios de referencia ${CFG.anualidad}.</div>`;
@@ -1157,6 +1195,7 @@ async function generarPDF(){
 }
 $('#pdf').onclick=async()=>{
   if(S.enviando) return; S.enviando=true;
+  { const cp=esModif()?[]:choquesPropios(); if(cp.length){ $('#envMsg').innerHTML=`<div class="msg err">Usted ya tiene solicitado este año: ${cp.map(esc).join('; ')}. Si quiere cambiarlo, vuelva a la pantalla de sus datos y elija «Modificación de la solicitud inicial» en Tipo de solicitud; si no, quite esa actuación.</div>`; S.enviando=false; return; } }
   const b=$('#pdf'), m=$('#envMsg'); b.disabled=true; b.textContent='Enviando…'; m.innerHTML='';
   try{
     const pdf=await generarPDF(); S.pdf=pdf;
@@ -1167,7 +1206,7 @@ $('#pdf').onclick=async()=>{
     $$('#steps li').forEach(li=>li.classList.remove('go'));
     S.step=4; ['s0','s1','s2','s3'].forEach(id=>$('#'+id).classList.add('hidden')); $('#s4').classList.remove('hidden'); window.scrollTo({top:0});
   }catch(err){
-    m.innerHTML='<div class="msg err">No se ha podido enviar la solicitud. Compruebe la conexión e inténtelo de nuevo. Si el problema continúa, contacte con la oficina.</div>';
+    m.innerHTML = /DUPLICADO/.test(String(err&&err.message)) ? `<div class="msg err">No se puede enviar: ${esc(String(err.message).replace(/^.*DUPLICADO:\s*/,''))} Cada recinto solo puede solicitarse una vez por actuación en el mismo año natural.</div>` : '<div class="msg err">No se ha podido enviar la solicitud. Compruebe la conexión e inténtelo de nuevo. Si el problema continúa, contacte con la oficina.</div>';
     b.disabled=false; b.textContent='Finalizar y enviar solicitud';
   } finally { S.enviando=false; }
 };
