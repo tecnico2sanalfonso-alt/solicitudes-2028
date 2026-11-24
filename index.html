@@ -261,6 +261,9 @@ body.ma .uo, body:not(.ma) .mo{display:none!important}
 .delbox .ds .note{color:#5b6660}
 .delbox .btn.del{background:#fff;border-color:#a8231b;color:#a8231b;white-space:nowrap}
 .delbox .btn.del.conf{background:#a8231b;color:#fff}
+.mailh{display:block;margin-top:5px;font-size:12.5px;color:#5b6660;line-height:1.4}
+.obsbox{margin-top:18px;padding:14px;border:1px solid var(--line,#dfe5e1);border-left:3px solid var(--orange);border-radius:3px;background:#fff}
+.obsbox textarea{width:100%}
 .lnk{border:0;background:none;padding:0;margin-top:4px;color:var(--red);font-size:12px;font-weight:600;cursor:pointer;text-decoration:underline;text-underline-offset:2px}
 .up{display:block;color:var(--muted);font-size:12px}
 .foot{color:var(--muted);font-size:11.5px;text-align:center;padding:8px 0 26px}
@@ -399,7 +402,7 @@ body.ma .uo, body:not(.ma) .mo{display:none!important}
       <div class="who"><div><span>Titular</span><b id="nom"></b></div><div><span>Nº socio</span><b id="ncod"></b></div><div><span>Recintos</span><b id="nrec"></b></div><div><span>Superficie</span><b id="nsup"></b></div></div>
       <div class="grid2">
         <div><label class="f" for="tel">Teléfono</label><div class="ed"><input id="tel" type="tel" placeholder="600 000 000"><button type="button" class="btn ghost sm hidden" data-ed="tel">Editar</button></div><span class="edh" id="h-tel"></span></div>
-        <div><label class="f" for="mail">Correo electrónico</label><div class="ed"><input id="mail" type="email" placeholder="nombre@correo.es"><button type="button" class="btn ghost sm hidden" data-ed="mail">Editar</button></div><span class="edh" id="h-mail"></span></div>
+        <div><label class="f" for="mail">Correo electrónico <b style="color:#a8231b">*</b></label><div class="ed"><input id="mail" type="email" placeholder="nombre@correo.es"><button type="button" class="btn ghost sm hidden" data-ed="mail">Editar</button></div><span class="edh" id="h-mail"></span><span class="mailh">Obligatorio. Escriba el correo que consulta habitualmente (el que tiene abierto en el móvil o el ordenador): ahí recibirá la copia de su solicitud y los avisos de la cooperativa.</span></div>
         <div class="span2"><label class="f" for="dom">Domicilio</label><div class="ed"><input id="dom" type="text" placeholder="Calle, número, CP y población"><button type="button" class="btn ghost sm hidden" data-ed="dom">Editar</button></div><span class="edh" id="h-dom"></span></div>
       </div>
       <div class="grid2" style="margin-top:14px">
@@ -551,8 +554,9 @@ body.ma .uo, body:not(.ma) .mo{display:none!important}
     <div class="totals uo" id="totals"></div>
     <div class="mes mo">Ejecución prevista: <b class="mesPrev"></b> (mes siguiente a la tramitación). Antes de ejecutar cualquier medida, coordínela con los técnicos de la cooperativa: la fecha de ejecución se comunica previamente a la Administración.</div>
     <div id="finBox" class="check uo"></div>
-    <div style="margin-top:16px"><label class="f" for="obsSol">Observaciones de la solicitud</label>
-      <textarea id="obsSol" rows="3" maxlength="1500" placeholder="Cualquier aclaración que quiera trasladar a la cooperativa (accesos, fechas preferentes, situación de la finca…)"></textarea></div>
+    <div class="obsbox"><label class="f" for="obsSol">Observaciones · ¿Necesita algo más?</label>
+      <p class="note" style="margin:0 0 8px">Escriba aquí cualquier cosa que necesite o quiera comentar a la cooperativa: una petición, una duda, accesos a la finca, fechas que le vienen mejor… Lo recibe la oficina junto con la solicitud.</p>
+      <textarea id="obsSol" rows="4" maxlength="1500" placeholder="Ej.: necesito que me llamen antes de empezar; la finca tiene el acceso por el camino de atrás…"></textarea></div>
     <div id="planBox" class="uo" style="overflow:auto"></div>
     <div class="cond">
       <div class="uo"><h3 class="ch">No será subvencionable</h3>
@@ -574,7 +578,7 @@ body.ma .uo, body:not(.ma) .mo{display:none!important}
       </div>
     </div>
     <div id="envMsg"></div>
-    <p class="note" style="margin-top:10px" id="envNote">Al finalizar, la solicitud se envía a la oficina de la cooperativa y recibirá una copia en PDF en su correo electrónico.</p>
+    <p class="note" style="margin-top:10px" id="envNote">Al finalizar, la solicitud se envía a la oficina de la cooperativa y recibirá una copia en PDF en <b id="mailCopia"></b>. Si ese correo no es correcto, vuelva a la pantalla de sus datos y corríjalo.</p>
   </section>
   <section id="s4" class="card hidden">
     <p class="kicker">Solicitud enviada</p>
@@ -726,7 +730,8 @@ const entidad = () => S.entidad || '';
 function contactoErr(){
   const t=$('#tel').value.replace(/[\s.\-]/g,'').replace(/^(\+34|0034)/,''), m=$('#mail').value.trim();
   if(!/^[6789]\d{8}$/.test(t)) return 'Indique un teléfono de contacto válido (9 cifras).';
-  if(m && !/^[^@\s;,]+@[^@\s;,]+\.[a-z]{2,}$/i.test(m)) return 'El correo electrónico no parece correcto. Corríjalo o déjelo en blanco.';
+  if(!m) return 'Indique su correo electrónico: es obligatorio para recibir la copia de la solicitud y los avisos de la cooperativa.';
+  if(!/^[^@\s;,]+@[^@\s;,]+\.[a-z]{2,}$/i.test(m)) return 'El correo electrónico no parece correcto. Revíselo.';
   return '';
 }
 $('#go2').onclick=()=>{
@@ -1141,6 +1146,7 @@ $('#tRes').onclick=e=>{
   renderRes();
 };
 $('#back2').onclick=()=>step(2);
+setInterval(()=>{ const e=$('#mailCopia'); if(e) e.textContent=$('#mail').value.trim()||'su correo electrónico'; },500);
 $('#acepto').onchange=e=>$('#pdf').disabled=!e.target.checked;
 
 /* ---------- PDF ---------- */
@@ -1400,7 +1406,7 @@ const FAQ = [
  {q:'No aparece una de mis fincas', k:['no aparece','falta','finca','recinto','no sale','superficie 0','no esta'],
   a:'La lista muestra las fincas que constan a su nombre en el registro de la cooperativa. Si falta alguna o la superficie no es correcta, contacte con la oficina de su cooperativa para revisarlo.'},
  {q:'¿Recibiré una copia de la solicitud?', k:['copia','pdf','justificante','recibir','descargar','imprimir','comprobante'],
-  a:'Sí. Al finalizar puede <b>descargar el PDF</b> y, si ha indicado su correo electrónico, recibirá una copia en él.'},
+  a:'Sí. Al finalizar puede <b>descargar el PDF</b> y además recibirá una copia en el correo electrónico que haya indicado (es obligatorio).'},
  {q:'¿Qué pasa si después desisto?', k:['desisto','desistir','renuncio','cancelar','anular','echarme atras','ya no quiero'],
   a:'Se le facturarán los pagos a cuenta que la cooperativa haya tenido que hacer (trabajos, materiales, derechos de variedades, material vegetal…) y un <b>2 %</b> del valor de la acción en concepto de gastos de gestión.'},
  {q:'¿Puedo modificar la solicitud después?', k:['modificar','cambiar solicitud','corregir','error','me he equivocado','rectificar'],
